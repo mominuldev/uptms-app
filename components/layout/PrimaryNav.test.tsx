@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { getSiteMenus } from "@/lib/site";
+import { menus } from "@/test/site-fixtures";
 import { PrimaryNav } from "./PrimaryNav";
 
-const { primary } = getSiteMenus();
+const { primary } = menus;
 
 afterEach(cleanup);
 

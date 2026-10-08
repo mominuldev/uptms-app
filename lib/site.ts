@@ -1,12 +1,11 @@
+import "server-only";
+import { getMenus, getSettings } from "./cms";
+import type { ApiMenus, ApiSettings, MenuLink } from "./content";
+
 /**
- * Phase 1 placeholder for the clinic settings and menus the shell needs.
- * Copy is taken verbatim from Figma (Version C, node 25-2).
- *
- * Phase 2 replaces these constants with `GET /public/settings` and
- * `GET /public/menus` (uptms-ad). Keep the shapes below in step with those
- * payloads so the swap is a data-source change only: components receive
- * `SiteSettings` / `SiteMenus` and never import the constants directly
- * except through `getSiteSettings()` / `getSiteMenus()`.
+ * The shell's view of clinic settings and menus. Components receive
+ * `SiteSettings` / `SiteMenus` (camelCase, only what the shell needs); the
+ * API payloads are mapped here, in one place.
  */
 
 export interface NavItem {
@@ -46,64 +45,66 @@ export interface SiteSettings {
 export interface SiteMenus {
   /** Header pills and menu sheet: Home / TMS / Contact / Quiz. */
   primary: NavItem[];
+  /** Tablet sheet and phone menu (falls back to `primary`). */
+  mobile: NavItem[];
   /** Footer "Explore" list. */
   footer: NavItem[];
+  /** Footer bottom-bar links (privacy, accessibility). */
+  legal: NavItem[];
   /** Primary calls to action used across the shell. */
   cta: { selfCheck: NavItem; selfCheckShort: NavItem };
 }
 
-const settings: SiteSettings = {
-  clinicName: "University Place TMS Clinic & General Psychiatry",
-  tagline: "Deep TMS and general psychiatric care for University Place and Greater Tacoma.",
-  serviceArea: "University Place & Greater Tacoma",
-  phone: { display: "253-234-4199", href: "tel:+12532344199" },
-  email: "contact@uptms.com",
-  address: {
-    street: "4007 Bridgeport Way W, Suite B",
-    locality: "University Place",
-    region: "WA",
-    postalCode: "98466",
-  },
-  hours: { short: "Mon–Fri, 8am–5pm", long: "Mon–Fri · 8:00 AM–5:00 PM" },
-  // Placeholder until the clinic confirms the main website URL (settings, Phase 2).
-  mainSiteUrl: "https://uptms.com",
-  social: [],
-  legal: {
-    copyright: "© 2026 University Place TMS Clinic & General Psychiatry",
-    crisis:
-      "This site is not a crisis service. In the U.S., call or text 988 for crisis support; call 911 for an immediate emergency.",
-    crisisShort: "Not a crisis service. Call or text 988 for crisis support; call 911 for an immediate emergency.",
-  },
-};
-
-const menus: SiteMenus = {
-  primary: [
-    { label: "Home", href: "/" },
-    { label: "TMS", href: "/tms" },
-    { label: "Contact", href: "/contact" },
-    { label: "Quiz", href: "/quiz" },
-  ],
-  footer: [
-    { label: "Home", href: "/" },
-    { label: "TMS", href: "/tms" },
-    { label: "Contact", href: "/contact" },
-    { label: "Free self-check", href: "/quiz" },
-    { label: "Care team", href: "/#care-team" },
-    { label: "Insurance", href: "/#insurance" },
-    { label: "Location & directions", href: "/#location" },
-  ],
-  cta: {
-    selfCheck: { label: "Free TMS Self-Check", href: "/quiz" },
-    selfCheckShort: { label: "Free Self-Check", href: "/quiz" },
-  },
-};
-
-/** Phase 2: `getData<SiteSettings>("public/settings")` behind `'use cache'`. */
-export function getSiteSettings(): SiteSettings {
-  return settings;
+/** Shell settings from `GET /public/settings` (Clinic settings, Figma 24). */
+export async function getSiteSettings(): Promise<SiteSettings> {
+  return toSiteSettings(await getSettings());
 }
 
-/** Phase 2: `getData<SiteMenus>("public/menus")` behind `'use cache'`. */
-export function getSiteMenus(): SiteMenus {
-  return menus;
+/** Shell menus from `GET /public/menus` (Navigation menus, Figma 17). */
+export async function getSiteMenus(): Promise<SiteMenus> {
+  return toSiteMenus(await getMenus());
+}
+
+const SOCIAL = new Set<SocialLink["network"]>(["facebook", "instagram", "linkedin", "youtube", "x"]);
+
+export function toSiteSettings(api: ApiSettings): SiteSettings {
+  const { clinic } = api;
+
+  return {
+    clinicName: clinic.name,
+    tagline: clinic.tagline,
+    serviceArea: clinic.service_area_label,
+    phone: clinic.phone,
+    email: clinic.email,
+    address: {
+      street: clinic.address.street,
+      locality: clinic.address.locality,
+      region: clinic.address.region,
+      postalCode: clinic.address.postal_code,
+    },
+    hours: { short: api.hours.short, long: api.hours.long },
+    mainSiteUrl: clinic.main_site_url ?? "/",
+    social: clinic.social
+      .filter((item): item is { network: SocialLink["network"]; url: string } => SOCIAL.has(item.network as SocialLink["network"]))
+      .map((item) => ({ network: item.network, label: item.network === "x" ? "X" : item.network[0]!.toUpperCase() + item.network.slice(1), href: item.url })),
+    legal: { copyright: api.legal.copyright, crisis: api.legal.crisis, crisisShort: api.legal.crisis_short },
+  };
+}
+
+const flat = (items: MenuLink[] | undefined): NavItem[] => (items ?? []).map(({ label, href }) => ({ label, href }));
+
+export function toSiteMenus(api: ApiMenus): SiteMenus {
+  const primary = flat(api.header);
+  const selfCheck = primary.find((item) => item.href === "/quiz")?.href ?? "/quiz";
+
+  return {
+    primary,
+    mobile: api.mobile && api.mobile.length > 0 ? flat(api.mobile) : primary,
+    footer: flat(api["footer-explore"]),
+    legal: flat(api["footer-legal"]),
+    cta: {
+      selfCheck: { label: "Free TMS Self-Check", href: selfCheck },
+      selfCheckShort: { label: "Free Self-Check", href: selfCheck },
+    },
+  };
 }

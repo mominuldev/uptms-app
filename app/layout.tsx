@@ -23,9 +23,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  const settings = getSiteSettings();
-  const menus = getSiteMenus();
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const [settings, menus] = await Promise.all([getSiteSettings(), getSiteMenus()]);
 
   return (
     <html lang="en" className={`${fontVariables} h-full`}>

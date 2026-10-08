@@ -2,17 +2,15 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getSiteMenus, getSiteSettings } from "@/lib/site";
+import { menus, settings } from "@/test/site-fixtures";
 import { SiteMenu } from "./SiteMenu";
 
 const navigation = vi.hoisted(() => ({ pathname: "/tms" }));
 
 vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
 // next/image needs the Next bundler for static imports; the logo is irrelevant here.
-vi.mock("./Logo", () => ({ Logo: () => <a href="/home-placeholder">UPTMS home</a> }));
+vi.mock("./Logo", () => ({ Logo: () => <span>UPTMS home</span> }));
 
-const settings = getSiteSettings();
-const menus = getSiteMenus();
 
 function setup() {
   const user = userEvent.setup();
