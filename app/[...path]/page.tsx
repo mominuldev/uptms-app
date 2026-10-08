@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageView } from "@/components/page/PageView";
 import { getPage, getPages } from "@/lib/cms";
+import { toMetadata } from "@/lib/seo";
 
 /**
  * Every other CMS page (/tms, /contact, /quiz, and pages staff create).
@@ -23,7 +24,7 @@ function toPath(segments: string[]): string {
 export async function generateMetadata({ params }: PageProps<"/[...path]">): Promise<Metadata> {
   const page = await getPage(toPath((await params).path));
 
-  return page ? { title: page.title } : { title: "Not found" };
+  return page ? toMetadata(page.seo) : { title: "Not found" };
 }
 
 export default async function CmsPage({ params }: PageProps<"/[...path]">) {

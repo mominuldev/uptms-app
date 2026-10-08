@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { ApiError, getData } from "./api";
-import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, Quiz } from "./content";
+import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, Quiz, SeoSite } from "./content";
 
 /**
  * Cached reads of published content. Every entry carries the `content` tag
@@ -32,6 +32,15 @@ export async function getPage(path: string): Promise<Page | null> {
   cacheTag("content", `page:${path === "/" ? "home" : path.replace(/^\//, "")}`);
 
   return orNull(() => getData<Page>(`public/page?path=${encodeURIComponent(path)}`));
+}
+
+/** Site-wide <head> values: verification codes and the X handle. */
+export async function getSeoSite(): Promise<SeoSite | null> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "seo");
+
+  return orNull(() => getData<SeoSite>("public/seo"));
 }
 
 export async function getPages(): Promise<PageSummary[]> {

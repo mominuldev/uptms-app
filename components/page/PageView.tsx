@@ -1,4 +1,5 @@
 import { BlockRenderer } from "@/components/blocks/BlockRenderer";
+import { JsonLd } from "@/components/seo/JsonLd";
 import type { Page } from "@/lib/content";
 import { getSettings } from "@/lib/cms";
 import { toSiteSettings } from "@/lib/site";
@@ -15,6 +16,7 @@ export async function PageView({ page }: { page: Page }) {
         </p>
       )}
       <BlockRenderer blocks={page.blocks} ctx={{ settings: toSiteSettings(api), api, path: page.path }} />
+      {!page.preview && <JsonLd graph={page.seo.json_ld} />}
     </div>
   );
 }

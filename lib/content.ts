@@ -166,6 +166,33 @@ export interface Block<D = Record<string, unknown>, S = Record<string, unknown>>
   sources: S;
 }
 
+/** What search engines and social apps see (uptms-ad SeoPresenter::public). */
+export interface Seo {
+  title: string;
+  description: string;
+  canonical: string;
+  robots: { index: boolean; follow: boolean; max_image_preview: "large" | "standard" | "none"; max_snippet: number | null };
+  open_graph: {
+    type: "website" | "article";
+    title: string;
+    description: string;
+    url: string;
+    site_name: string;
+    image: { url: string; width: number | null; height: number | null; alt: string } | null;
+    published_time: string | null;
+    modified_time: string | null;
+  };
+  twitter: { card: "summary" | "summary_large_image"; site: string | null };
+  json_ld: Record<string, unknown>[];
+}
+
+export interface SeoSite {
+  site_name: string;
+  separator: string;
+  x_handle: string | null;
+  verification: { google?: string; bing?: string };
+}
+
 export interface Page {
   id: number;
   title: string;
@@ -176,6 +203,7 @@ export interface Page {
   published_at: string | null;
   updated_at: string | null;
   blocks: Block[];
+  seo: Seo;
 }
 
 export interface PageSummary {
