@@ -213,3 +213,49 @@ export interface PageSummary {
   template: string;
   updated_at: string | null;
 }
+
+/** A node of a post body (uptms-ad packages/posts RichText): a small, whitelisted tree. */
+export interface RichNode {
+  type: string;
+  text?: string;
+  attrs?: { level?: number; start?: number; mediaId?: number; alt?: string; image?: PublicImage | null };
+  marks?: { type: "bold" | "italic" | "link"; attrs?: { href?: string } }[];
+  content?: RichNode[];
+}
+
+export interface PostCategory {
+  name: string;
+  slug: string;
+  description: string | null;
+  posts: number;
+}
+
+export interface PostCard {
+  slug: string;
+  path: string;
+  title: string;
+  dek: string | null;
+  category: { id: number; name: string; slug: string } | null;
+  cover: PublicImage | null;
+  reading_minutes: number;
+  published_at: string | null;
+}
+
+export interface PostList {
+  posts: PostCard[];
+  page: number;
+  last_page: number;
+  total: number;
+  category: string | null;
+}
+
+export interface PostArticle extends PostCard {
+  body: { type: "doc"; content: RichNode[] };
+  tags: string[];
+  author: { name: string; credentials: string | null } | null;
+  review: { by: { name: string; credentials: string | null } | null; at: string } | null;
+  updated_at: string | null;
+  preview: boolean;
+  related: PostCard[];
+  seo: Seo;
+}

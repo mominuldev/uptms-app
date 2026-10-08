@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { ApiError, getData } from "./api";
-import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, Quiz, SeoSite } from "./content";
+import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, PostArticle, PostCategory, PostList, Quiz, SeoSite } from "./content";
 
 /**
  * Cached reads of published content. Every entry carries the `content` tag
@@ -78,6 +78,39 @@ export async function getQuiz(): Promise<Quiz | null> {
 /** Uncached: the working copy of a page behind a signed preview token. */
 export async function getPreview(path: string, token: string): Promise<Page | null> {
   return orNull(() => getData<Page>(`public/page?path=${encodeURIComponent(path)}&preview=${encodeURIComponent(token)}`));
+}
+
+/** Published posts, newest first; `category` is a category slug. */
+export async function getPosts(category: string | null = null, page = 1): Promise<PostList> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "posts");
+
+  const query = new URLSearchParams({ page: String(page) });
+  if (category) query.set("category", category);
+
+  return getData<PostList>(`public/posts?${query.toString()}`);
+}
+
+export async function getPost(slug: string): Promise<PostArticle | null> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "posts", `post:${slug}`);
+
+  return orNull(() => getData<PostArticle>(`public/posts/${encodeURIComponent(slug)}`));
+}
+
+export async function getPostCategories(): Promise<PostCategory[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "posts");
+
+  return getData<PostCategory[]>("public/post-categories");
+}
+
+/** A post's working copy for the admin's signed preview link: never cached. */
+export async function getPostPreview(slug: string, token: string): Promise<PostArticle | null> {
+  return orNull(() => getData<PostArticle>(`public/posts/${encodeURIComponent(slug)}?preview=${encodeURIComponent(token)}`));
 }
 
 async function orNull<T>(load: () => Promise<T>): Promise<T | null> {
