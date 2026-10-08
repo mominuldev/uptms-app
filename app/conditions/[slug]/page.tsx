@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { toMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { ConditionDetail } from "@/components/conditions/ConditionDetail";
 import { getCondition, getConditions } from "@/lib/cms";
@@ -15,7 +17,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/conditions/[slug]">): Promise<Metadata> {
   const condition = await getCondition((await params).slug);
 
-  return condition ? { title: condition.detail_title, description: condition.summary } : { title: "Not found" };
+  return condition ? toMetadata(condition.seo) : { title: "Not found" };
 }
 
 export default async function ConditionPage({ params }: PageProps<"/conditions/[slug]">) {
@@ -31,5 +33,10 @@ export default async function ConditionPage({ params }: PageProps<"/conditions/[
     notFound();
   }
 
-  return <ConditionDetail condition={condition} others={all.filter((item) => item.slug !== slug)} settings={settings} />;
+  return (
+    <>
+      <ConditionDetail condition={condition} others={all.filter((item) => item.slug !== slug)} settings={settings} />
+      <JsonLd graph={condition.seo.json_ld} />
+    </>
+  );
 }

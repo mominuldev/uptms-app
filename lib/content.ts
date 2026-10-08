@@ -127,6 +127,7 @@ export interface Condition {
 
 export interface ConditionDetail extends Condition {
   faqs: Faq[];
+  seo: Seo;
 }
 
 export interface QuizQuestion {
