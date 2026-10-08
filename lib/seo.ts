@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import type { Seo } from "./content";
+import type { Metadata, MetadataRoute } from "next";
+import type { Seo, SitemapEntry } from "./content";
 
 /**
  * Indexing is switched on at launch (ALLOW_INDEXING=true). Until then every
@@ -8,6 +8,34 @@ import type { Seo } from "./content";
  */
 export function indexingAllowed(): boolean {
   return process.env.ALLOW_INDEXING === "true";
+}
+
+/** This site's public origin, without a trailing slash. */
+export function siteOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+}
+
+/** Laravel's sitemap entries (relative paths) as Next.js sitemap rows. */
+export function toSitemap(entries: SitemapEntry[], origin = siteOrigin()): MetadataRoute.Sitemap {
+  return entries.map((entry) => ({
+    url: origin + (entry.path === "/" ? "/" : "/" + entry.path.replace(/^\/+/, "")),
+    lastModified: entry.lastmod ?? undefined,
+    priority: entry.priority,
+    images: entry.images.length > 0 ? entry.images.map((image) => image.url) : undefined,
+  }));
+}
+
+/**
+ * robots.txt: the text staff edit in the admin, plus a Sitemap line when
+ * they left it out. `null` (before launch) shuts every crawler out.
+ */
+export function robotsTxt(text: string | null, origin = siteOrigin()): string {
+  if (text === null) return "User-agent: *\nDisallow: /\n";
+
+  const body = text.replace(/\r\n?/g, "\n").trimEnd();
+  const sitemap = /^\s*sitemap\s*:/im.test(body) ? "" : `\n\nSitemap: ${origin}/sitemap.xml`;
+
+  return `${body}${sitemap}\n`;
 }
 
 /** Laravel's resolved SEO (titles already templated) as Next.js metadata. */

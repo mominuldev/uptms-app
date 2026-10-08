@@ -194,6 +194,22 @@ export interface SeoSite {
   verification: { google?: string; bing?: string };
 }
 
+/** One URL of the XML sitemap (uptms-ad SitemapBuilder::entries). */
+export interface SitemapEntry {
+  path: string;
+  type: "page" | "condition" | "post";
+  lastmod: string | null;
+  priority: number;
+  images: { url: string; alt: string }[];
+}
+
+/** robots.txt as edited in SEO → Sitemap & robots (Figma 22). */
+export interface RobotsFile {
+  text: string;
+  /** Set only while IndexNow is on and the site is live. */
+  indexnow_key: string | null;
+}
+
 export interface Page {
   id: number;
   title: string;

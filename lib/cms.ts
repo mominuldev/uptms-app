@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { ApiError, getData } from "./api";
-import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, PostArticle, PostCategory, PostList, Quiz, SeoSite } from "./content";
+import type { ApiMenus, ApiSettings, Condition, ConditionDetail, Page, PageSummary, PostArticle, PostCategory, PostList, Quiz, RobotsFile, SeoSite, SitemapEntry } from "./content";
 
 /**
  * Cached reads of published content. Every entry carries the `content` tag
@@ -41,6 +41,23 @@ export async function getSeoSite(): Promise<SeoSite | null> {
   cacheTag("content", "seo");
 
   return orNull(() => getData<SeoSite>("public/seo"));
+}
+
+/** Every indexable URL, for app/sitemap.ts. Any publish refreshes it (`content`). */
+export async function getSitemap(): Promise<SitemapEntry[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "seo", "sitemap");
+
+  return getData<SitemapEntry[]>("public/sitemap");
+}
+
+export async function getRobots(): Promise<RobotsFile> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("content", "seo", "robots");
+
+  return getData<RobotsFile>("public/robots");
 }
 
 export async function getPages(): Promise<PageSummary[]> {

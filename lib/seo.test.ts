@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Seo } from "./content";
-import { jsonLd, toMetadata } from "./seo";
+import { jsonLd, robotsTxt, toMetadata, toSitemap } from "./seo";
 
 const seo: Seo = {
   title: "Deep TMS Therapy in University Place, WA | UPTMS",
@@ -37,5 +37,37 @@ describe("jsonLd", () => {
     const out = jsonLd([{ "@type": "Thing", name: "</script><script>alert(1)</script>" }]);
     expect(out).not.toContain("</script>");
     expect(JSON.parse(out)["@graph"][0].name).toBe("</script><script>alert(1)</script>");
+  });
+});
+
+describe("toSitemap", () => {
+  it("makes paths absolute and keeps dates, priority and images", () => {
+    const rows = toSitemap(
+      [
+        { path: "/", type: "page", lastmod: "2026-10-01T10:00:00+00:00", priority: 1, images: [{ url: "https://cdn/hero.webp", alt: "Hero" }] },
+        { path: "/conditions/ocd", type: "condition", lastmod: null, priority: 0.8, images: [] },
+      ],
+      "https://uptms.com",
+    );
+
+    expect(rows).toEqual([
+      { url: "https://uptms.com/", lastModified: "2026-10-01T10:00:00+00:00", priority: 1, images: ["https://cdn/hero.webp"] },
+      { url: "https://uptms.com/conditions/ocd", lastModified: undefined, priority: 0.8, images: undefined },
+    ]);
+  });
+});
+
+describe("robotsTxt", () => {
+  it("disallows everything before launch", () => {
+    expect(robotsTxt(null, "https://uptms.com")).toBe("User-agent: *\nDisallow: /\n");
+  });
+
+  it("serves the admin's text and adds the sitemap when it is missing", () => {
+    expect(robotsTxt("User-agent: *\r\nDisallow: /admin\r\n\r\n", "https://uptms.com")).toBe("User-agent: *\nDisallow: /admin\n\nSitemap: https://uptms.com/sitemap.xml\n");
+  });
+
+  it("leaves a Sitemap line staff wrote themselves alone", () => {
+    const text = "User-agent: *\nAllow: /\nsitemap: https://uptms.com/custom.xml";
+    expect(robotsTxt(text, "https://uptms.com")).toBe(`${text}\n`);
   });
 });
