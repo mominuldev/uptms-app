@@ -1,5 +1,6 @@
 import type { ApiSettings, Condition, ContentItem, Faq, InsurancePartner, Link, MenuLink, PublicImage, Quiz, TeamMember, Testimonial } from "@/lib/content";
 import type { SiteSettings } from "@/lib/site";
+import type { ConsultationFormSource } from "@/components/forms/ConsultationForm";
 
 /**
  * Block data as the API sends it, one interface per block type
@@ -60,9 +61,13 @@ export interface ConsultationData extends Rail {
   email_note: string;
   form_title: string;
   form_notice: string;
-  topics: string[];
   form_help: string;
   submit_label: string;
+  success_body: string;
+}
+export interface ConsultationSources {
+  /** Topics and call times from the consultation inbox; missing when it is switched off. */
+  form?: ConsultationFormSource | null;
 }
 
 export interface ConditionCardsData extends Rail {

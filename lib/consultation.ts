@@ -1,0 +1,106 @@
+"use server";
+
+import { headers } from "next/headers";
+import { apiUrl } from "./api";
+
+/**
+ * The Contact form's server action. The browser never talks to Laravel:
+ * this forwards the request server-side to POST /public/consultation-requests,
+ * where Laravel validates again and stores it encrypted. With SITE_TOKEN set
+ * (= FRONTEND_SITE_TOKEN in uptms-ad) the visitor's IP and user agent are
+ * forwarded so Laravel's rate limit and Turnstile check apply per visitor.
+ * Nothing the person typed is logged here.
+ */
+export interface ConsultationInput {
+  name: string;
+  phone: string;
+  email: string;
+  topic: string;
+  best_time: string;
+  referred_by: string;
+  message: string;
+  website: string;
+  source_page: string;
+  referrer: string;
+  utm: Record<string, string>;
+  turnstile_token: string;
+}
+
+export type ConsultationResult =
+  | { status: "sent"; reference: string | null }
+  | { status: "invalid"; errors: Record<string, string> }
+  | { status: "rate-limited"; retryAfter: number | null }
+  | { status: "failed"; requestId: string | null };
+
+const FIELDS = ["name", "phone", "email", "topic", "best_time", "referred_by", "message", "turnstile_token"] as const;
+
+export async function submitConsultation(input: ConsultationInput): Promise<ConsultationResult> {
+  const incoming = await headers();
+  const forwarded: Record<string, string> = {};
+  const token = process.env.SITE_TOKEN;
+
+  if (token) {
+    const ip = (incoming.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || incoming.get("x-real-ip") || "";
+    forwarded["X-Uptms-Site-Token"] = token;
+    if (ip) forwarded["X-Uptms-Client-Ip"] = ip;
+    const agent = incoming.get("user-agent");
+    if (agent) forwarded["X-Uptms-Client-Agent"] = agent.slice(0, 512);
+  }
+
+  const body = {
+    name: input.name.trim(),
+    phone: input.phone.trim(),
+    email: input.email.trim() || null,
+    topic: input.topic,
+    best_time: input.best_time || null,
+    referred_by: input.referred_by.trim() || null,
+    message: input.message.trim() || null,
+    website: input.website,
+    source_page: input.source_page.startsWith("/") ? input.source_page.slice(0, 190) : null,
+    referrer: input.referrer.slice(0, 2000) || null,
+    utm: Object.keys(input.utm).length > 0 ? input.utm : null,
+    turnstile_token: input.turnstile_token || null,
+  };
+
+  let response: Response;
+
+  try {
+    response = await fetch(apiUrl("public/consultation-requests"), {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json", ...forwarded },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    return { status: "failed", requestId: null };
+  }
+
+  const payload = (await response.json().catch(() => null)) as {
+    data?: { reference?: string | null };
+    errors?: Record<string, string[]>;
+    meta?: { request_id?: string; retry_after?: number };
+  } | null;
+
+  if (response.status === 201) {
+    return { status: "sent", reference: payload?.data?.reference ?? null };
+  }
+
+  if (response.status === 422 && payload?.errors) {
+    const errors: Record<string, string> = {};
+
+    for (const field of FIELDS) {
+      const message = payload.errors[field]?.[0];
+      if (message) errors[field === "message" ? "question" : field] = message;
+    }
+
+    if (Object.keys(errors).length > 0) return { status: "invalid", errors };
+  }
+
+  if (response.status === 429) {
+    const retry = Number(payload?.meta?.retry_after ?? response.headers.get("Retry-After"));
+
+    return { status: "rate-limited", retryAfter: Number.isFinite(retry) && retry > 0 ? retry : null };
+  }
+
+  return { status: "failed", requestId: payload?.meta?.request_id ?? response.headers.get("X-Request-Id") };
+}

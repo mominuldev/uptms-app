@@ -2,11 +2,11 @@ import { Headline } from "@/components/content/Headline";
 import { Container } from "@/components/ui/Container";
 import { fillTokens } from "@/lib/tokens";
 import { ConsultationForm } from "@/components/forms/ConsultationForm";
-import type { BlockProps, ConsultationData } from "../types";
+import type { BlockProps, ConsultationData, ConsultationSources } from "../types";
 import { DotList, Rail } from "./parts";
 
 /** Contact 01 "Free initial phone consultation" (Figma 33:404): copy beside the request form. */
-export function Consultation({ data, number, anchor, ctx }: BlockProps<ConsultationData>) {
+export function Consultation({ data, sources, number, anchor, ctx }: BlockProps<ConsultationData, ConsultationSources>) {
   const headingId = anchor ? `${anchor}-title` : "consultation-title";
   const { email } = ctx.settings;
 
@@ -36,10 +36,11 @@ export function Consultation({ data, number, anchor, ctx }: BlockProps<Consultat
           <ConsultationForm
             title={data.form_title}
             notice={fillTokens(data.form_notice, ctx.settings)}
-            topics={data.topics}
             help={fillTokens(data.form_help, ctx.settings)}
             submitLabel={data.submit_label || "Request a Phone Consultation"}
+            successBody={fillTokens(data.success_body || "The team will call you within one business day during office hours.", ctx.settings)}
             phone={ctx.settings.phone}
+            form={sources?.form ?? null}
           />
         </div>
       </div>
