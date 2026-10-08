@@ -21,4 +21,7 @@ jobs:
       - run: npm run lint
       - run: npm run types
       - run: npm test
+      # The site prerenders from the API; CI replays recorded responses instead of running Laravel.
+      - name: Start the API stub
+        run: node scripts/ci-api.mjs &
       - run: npm run build
