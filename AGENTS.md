@@ -7,7 +7,8 @@ Design (source of truth): https://www.figma.com/design/ij7CwMEI0miNBTQn0lF0AE/UP
 ## Layout
 
 - `app/` — routes. `app/tokens.css` is identical to `../uptms-ad/resources/css/tokens.css` (Figma tokens); change both. `app/fonts.ts` self-hosts Source Serif 4, Nunito, Nunito Sans.
-- `components/` — `layout/`, `ui/`, `sections/`, `forms/`, `quiz/` (from Phase 1).
+- `components/` — `layout/` (shell), `ui/`, `content/` (Headline, Markdown, Picture), `blocks/` (one component per CMS block), `conditions/`, `forms/`, `quiz/`.
+- `lib/cms.ts` — every cached read (`'use cache'` + `cacheTag('content', …)`); `app/api/revalidate` is Laravel's signed webhook; `app/preview` renders drafts for a signed token.
 - `lib/api.ts` — `server-only` client for the Laravel envelope; throws `ApiError` with the stable `code`.
 
 ## Rules
@@ -15,7 +16,9 @@ Design (source of truth): https://www.figma.com/design/ij7CwMEI0miNBTQn0lF0AE/UP
 - Server Components by default; `'use client'` only for real interactivity (menu, quiz, form, map facade).
 - Never call the API from the browser; `API_URL` is server-only. Cached reads use `'use cache'` + `cacheLife` + `cacheTag`; uncached reads go inside `<Suspense>`.
 - No business rules here: Laravel validates and decides. No analytics or third-party scripts on the contact form or quiz pages (patient privacy).
-- Raw HTML from the API is rendered only after sanitising (Phase 2 decides the renderer).
+- No HTML from the API is ever injected: rich text is a small Markdown dialect parsed into React elements (`components/content/Markdown.tsx`); headlines mark accents with *asterisks*.
+- Pages are data: every CMS section is a block component registered in `components/blocks/registry-*.ts`, typed in `components/blocks/types.ts` to match uptms-ad `packages/pages/src/Blocks/BlockTypes.php`. A new block needs both.
+- Content tokens `{phone}`, `{hours}`, `{email}`, `tel:clinic` are filled from Clinic settings (`lib/tokens.ts`).
 
 ## Commands
 
