@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { RouteFallback } from "@/components/ui/RouteFallback";
 import { toMetadata } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import { ConditionDetail } from "@/components/conditions/ConditionDetail";
 import { getCondition, getConditions } from "@/lib/cms";
 import { getSiteSettings } from "@/lib/site";
 
-/** Condition pages, one per published condition (uptms-ad Conditions, Figma 13). */
+/**
+ * Condition pages, one per published condition (uptms-ad Conditions, Figma 13).
+ * One published later gets the App Shell and renders on its first visit
+ * (params are awaited inside <Suspense>, see app/[...path]/page.tsx).
+ */
 export async function generateStaticParams() {
   const conditions = await getConditions();
 
@@ -20,7 +26,15 @@ export async function generateMetadata({ params }: PageProps<"/conditions/[slug]
   return condition ? toMetadata(condition.seo) : { title: "Not found" };
 }
 
-export default async function ConditionPage({ params }: PageProps<"/conditions/[slug]">) {
+export default function ConditionPage({ params }: PageProps<"/conditions/[slug]">) {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <ConditionPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ConditionPageContent({ params }: Pick<PageProps<"/conditions/[slug]">, "params">) {
   const { slug } = await params;
 
   if (!/^[a-z0-9-]+$/.test(slug)) {

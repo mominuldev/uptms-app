@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { Article } from "@/components/posts/Article";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { RouteFallback } from "@/components/ui/RouteFallback";
 import { getPost, getPosts } from "@/lib/cms";
 import { toMetadata } from "@/lib/seo";
 import { getSiteSettings } from "@/lib/site";
 
-/** Every published guide is prerendered; one published later renders on its first visit and is cached. */
+/** Every published guide is prerendered; one published later gets the App Shell, renders on its first visit and is cached (params are awaited inside <Suspense>, see app/[...path]/page.tsx). */
 export async function generateStaticParams() {
   const first = await getPosts();
   const pages = await Promise.all(Array.from({ length: Math.max(0, first.last_page - 1) }, (_, i) => getPosts(null, i + 2)));
@@ -22,7 +24,15 @@ export async function generateMetadata({ params }: PageProps<"/resources/[slug]"
   return post ? toMetadata(post.seo) : { title: "Not found" };
 }
 
-export default async function PostPage({ params }: PageProps<"/resources/[slug]">) {
+export default function PostPage({ params }: PageProps<"/resources/[slug]">) {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <PostPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function PostPageContent({ params }: Pick<PageProps<"/resources/[slug]">, "params">) {
   const { slug } = await params;
 
   if (!/^[a-z0-9-]+$/.test(slug)) {
