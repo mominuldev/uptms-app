@@ -8,6 +8,8 @@ import { Nunito, Nunito_Sans, Source_Serif_4 } from "next/font/google";
 export const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   style: ["normal", "italic"],
+  // Optical sizing: display sizes get the finer, narrower cut Figma renders.
+  axes: ["opsz"],
   variable: "--font-source-serif",
   display: "swap",
 });
