@@ -1,0 +1,97 @@
+name: Deploy to Hostinger
+
+# Production is published by Hostinger's hPanel Node.js deployment, not by
+# this job: on every push to main, hPanel pulls the repository, runs
+# `npm run build` and points Passenger at the new `.next/standalone` bundle.
+# When its build fails it says nothing and the previous version keeps serving.
+#
+# So this job does two things hPanel does not: it fails loudly if the commit
+# cannot build and boot the way hPanel runs it, and it waits for the live
+# site to report this exact commit (the `x-commit` header, next.config.mjs).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      # The site prerenders from the API; CI replays recorded responses
+      # instead of reaching the production Laravel.
+      API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_SITE_URL: ${{ vars.SITE_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run types
+      - run: npm test
+
+      - name: Start the API stub
+        run: node scripts/ci-api.mjs &
+
+      - run: npm run build
+
+      # hPanel publishes `.next/standalone` with `public` and `.next/static`
+      # copied beside server.js, and starts server.js. Boot it that way and
+      # fetch the homepage, so a build that cannot start fails here, not
+      # silently on the host.
+      - name: Start the standalone server the way hPanel runs it
+        run: |
+          test -f .next/standalone/server.js || {
+            echo "::error::next build produced no .next/standalone/server.js — next.config.mjs must set output: \"standalone\"."
+            exit 1
+          }
+          cp -R public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+          (cd .next/standalone && PORT=3999 HOSTNAME=127.0.0.1 node server.js > ../../start.log 2>&1 &)
+          for _ in $(seq 1 30); do
+            sleep 1
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/ || true)
+            [ "$code" = "200" ] && break
+            grep -qE 'Error' start.log && break
+          done
+          pkill -f 'node server.js' || true
+          if [ "${code:-}" != "200" ]; then
+            echo "::error::The standalone server did not serve / (got ${code:-nothing})."
+            cat start.log
+            exit 1
+          fi
+          echo "Standalone server booted and served /."
+
+      # hPanel's build takes a couple of minutes after the push. Wait for the
+      # live site to report this commit rather than trusting a 200 from
+      # whatever version is serving.
+      - name: Wait for hPanel to publish this commit
+        run: |
+          site="${{ vars.SITE_URL }}"
+          want="${{ github.sha }}"
+          for _ in $(seq 1 60); do
+            headers=$(curl -sS -D - -o /dev/null --max-time 30 \
+              -H 'Cache-Control: no-cache' "$site/?deploy=${want:0:12}" || true)
+            code=$(printf '%s' "$headers" | head -1 | grep -oE '[0-9]{3}' | head -1)
+            live=$(printf '%s' "$headers" | tr -d '\r' | grep -i '^x-commit:' | awk '{print $2}')
+            if [ "$code" = "200" ] && [ "$live" = "$want" ]; then
+              echo "$site/ -> 200, serving commit $want"
+              exit 0
+            fi
+            echo "$site/ -> ${code:-no response}, serving ${live:-no x-commit header yet}; waiting"
+            sleep 10
+          done
+          echo "::error::After 10 minutes the site still serves ${live:-an unknown commit}, not $want. hPanel's build most likely failed — check its build log in hPanel."
+          exit 1
