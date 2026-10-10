@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Headline } from "@/components/content/Headline";
+import { Container } from "@/components/ui/Container";
 import { Button, type ButtonVariant } from "@/components/ui/Button";
 import { SectionRail } from "@/components/ui/SectionRail";
 import type { Link as ContentLink } from "@/lib/content";
@@ -9,8 +10,8 @@ import { isExternal, resolveLink } from "@/lib/tokens";
 
 /**
  * Building blocks shared by the Home sections (Figma Version C, 25:128).
- * Panel spacing follows the design: panels are inset 12 / 16 / 24px from the
- * viewport and 24px apart; their content is padded 20 / 40 / 56 / 96px.
+ * Panels span the full viewport width and sit 12 / 16 / 24px apart; their
+ * content lives in the page `Container`.
  */
 
 type Tokens = Pick<SiteSettings, "phone" | "hours" | "email">;
@@ -52,13 +53,13 @@ export function TintPanel({
   block?: string;
 }) {
   return (
-    <div className={`px-3 pb-3 md:px-4 md:pb-4 lg:px-6 lg:pb-6 ${className}`} data-block={block}>
+    <div className={`px-4 pb-3 md:pb-4 lg:pb-6 ${className}`} data-block={block}>
       <section
         id={id ?? undefined}
         aria-labelledby={labelledBy}
-        className={`mx-auto w-full max-w-[1392px] rounded-panel px-5 py-12 md:px-10 md:py-16 lg:px-14 lg:py-20 xl:p-24 ${anchorClasses} ${panelTones[tone]} ${innerClassName}`}
+        className={`w-full rounded-panel py-12 md:py-16 lg:py-20 xl:py-24 ${anchorClasses} ${panelTones[tone]} ${innerClassName}`}
       >
-        {children}
+        <Container>{children}</Container>
       </section>
     </div>
   );

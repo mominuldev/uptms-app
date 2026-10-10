@@ -10,7 +10,13 @@ import type { Condition, ConditionDetail as Detail } from "@/lib/content";
 import type { SiteSettings } from "@/lib/site";
 import { resolveLink } from "@/lib/tokens";
 
-const reviewed = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+const reviewed = (date: string) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 
 /**
  * /conditions/{slug}: no Figma frame exists, so it is composed from the
@@ -18,7 +24,10 @@ const reviewed = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateStr
  * form copy, FAQ accordion, sibling cards and the royal closing band.
  */
 export function ConditionDetail({ condition, others, settings }: { condition: Detail; others: Condition[]; settings: SiteSettings }) {
-  const cta = resolveLink(condition.cta, settings) ?? { label: "Request a Free Phone Consultation", href: "/contact" };
+  const cta = resolveLink(condition.cta, settings) ?? {
+    label: "Request a Free Phone Consultation",
+    href: "/contact",
+  };
   const ctaLabel = cta.label.replace(/\s*→\s*$/, "");
   let section = 0;
   const next = () => String(++section).padStart(2, "0");
@@ -88,23 +97,25 @@ export function ConditionDetail({ condition, others, settings }: { condition: De
       </Container>
 
       {condition.faqs.length > 0 && (
-        <div className="px-3 md:px-4 lg:px-6">
-          <section aria-labelledby="condition-faq" className="mx-auto w-full max-w-[1392px] rounded-panel bg-paper px-5 py-12 md:px-10 md:py-16 lg:px-[72px] lg:py-[88px]">
-            <div className="flex flex-col gap-8 lg:flex-row lg:gap-20">
-              <div className="flex flex-col gap-5 lg:w-[360px] lg:shrink-0">
-                <SectionRail number={next()} label="Your questions" />
-                <h2 id="condition-faq" className="font-serif text-heading-m">
-                  Questions about {condition.eyebrow.toLowerCase()} care.
-                </h2>
+        <div className="px-4">
+          <section aria-labelledby="condition-faq" className="w-full rounded-panel bg-paper py-12 md:py-16 lg:py-[88px]">
+            <Container>
+              <div className="flex flex-col gap-8 lg:flex-row lg:gap-20">
+                <div className="flex flex-col gap-5 lg:w-[360px] lg:shrink-0">
+                  <SectionRail number={next()} label="Your questions" />
+                  <h2 id="condition-faq" className="font-serif text-heading-m">
+                    Questions about {condition.eyebrow.toLowerCase()} care.
+                  </h2>
+                </div>
+                <div className="min-w-0 flex-1 rounded-card bg-white px-6 md:px-8">
+                  {condition.faqs.map((faq, index) => (
+                    <FaqItem key={faq.id} question={faq.question} defaultOpen={index === 0}>
+                      <Markdown text={faq.answer} className="flex flex-col gap-3" />
+                    </FaqItem>
+                  ))}
+                </div>
               </div>
-              <div className="min-w-0 flex-1 rounded-card bg-white px-6 md:px-8">
-                {condition.faqs.map((faq, index) => (
-                  <FaqItem key={faq.id} question={faq.question} defaultOpen={index === 0}>
-                    <Markdown text={faq.answer} className="flex flex-col gap-3" />
-                  </FaqItem>
-                ))}
-              </div>
-            </div>
+            </Container>
           </section>
         </div>
       )}

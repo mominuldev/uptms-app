@@ -1,9 +1,9 @@
+import { Container } from "@/components/ui/Container";
 import type { ComponentProps, ElementType, ReactNode } from "react";
 
 /**
- * Rounded panel, the signature surface of design Version C. The panel is
- * inset from the viewport (12 / 16 / 24px at 390 / 768 / 1440) and pads its
- * content (20 / 40 / 72px). Tones follow the Figma panels: navy (hero),
+ * Rounded panel, the signature surface of design Version C. The panel spans
+ * the full viewport width; its content sits in the page `Container`. Tones follow the Figma panels: navy (hero),
  * sky (consultation band), sky-soft (specialties), white (outlined card).
  */
 export type PanelTone = "navy" | "sky" | "skySoft" | "white";
@@ -18,8 +18,6 @@ const tones: Record<PanelTone, string> = {
 type PanelProps<T extends ElementType> = {
   as?: T;
   tone?: PanelTone;
-  /** Inset the panel from the viewport edge (default). Turn off when nesting. */
-  inset?: boolean;
   className?: string;
   innerClassName?: string;
   children: ReactNode;
@@ -28,7 +26,6 @@ type PanelProps<T extends ElementType> = {
 export function Panel<T extends ElementType = "section">({
   as,
   tone = "navy",
-  inset = true,
   className = "",
   innerClassName = "",
   children,
@@ -37,12 +34,9 @@ export function Panel<T extends ElementType = "section">({
   const Tag: ElementType = as ?? "section";
 
   return (
-    <div className={inset ? `px-3 md:px-4 lg:px-6 ${className}` : className}>
-      <Tag
-        className={`mx-auto w-full max-w-[1392px] rounded-panel px-5 py-10 md:px-10 md:py-14 lg:px-[72px] lg:py-[72px] ${tones[tone]} ${innerClassName}`}
-        {...rest}
-      >
-        {children}
+    <div className={`px-4 ${className}`}>
+      <Tag className={`w-full rounded-panel py-10 md:py-14 lg:py-[72px] ${tones[tone]} ${innerClassName}`} {...rest}>
+        <Container>{children}</Container>
       </Tag>
     </div>
   );

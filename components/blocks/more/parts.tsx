@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Container } from "@/components/ui/Container";
 import { SectionRail } from "@/components/ui/SectionRail";
 import type { Link as ContentLink } from "@/lib/content";
 import { isExternal } from "@/lib/tokens";
@@ -13,7 +14,7 @@ export function Rail({ number, label, tone = "light" }: { number: string | null;
   return number && label ? <SectionRail number={number} label={label} tone={tone} /> : null;
 }
 
-/** Rounded panel in any surface colour, inset from the viewport like `Panel`. */
+/** Rounded panel in any surface colour, full viewport width like `Panel`. */
 export function Surface({
   id,
   className = "",
@@ -28,13 +29,13 @@ export function Surface({
   children: ReactNode;
 }) {
   return (
-    <div className={`px-3 md:px-4 lg:px-6 ${className}`}>
+    <div className={`px-4 ${className}`}>
       <section
         id={id}
         aria-labelledby={labelledBy}
-        className={`mx-auto w-full max-w-[1392px] scroll-mt-28 rounded-panel px-5 py-12 md:px-10 md:py-16 lg:px-[72px] lg:py-[88px] ${innerClassName}`}
+        className={`w-full scroll-mt-28 rounded-panel py-12 md:py-16 lg:py-[88px] ${innerClassName}`}
       >
-        {children}
+        <Container>{children}</Container>
       </section>
     </div>
   );

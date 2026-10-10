@@ -7,9 +7,13 @@
  * (Class names are written out in full so Tailwind can find them.)
  */
 
-/** Outer surface: inset like Panel, centred at the 1392px cap. */
+/**
+ * Outer surface: full width with a 16px side gap. Its horizontal padding
+ * reproduces `Container` (20 / 40 / 120px gutters, 1440px cap) minus the
+ * 16px margin, so the content lines up with every other section.
+ */
 export const joinedSurface =
-  "mx-auto mb-3 w-[calc(100%-1.5rem)] max-w-[1392px] scroll-mt-6 rounded-panel bg-paper px-5 md:mb-4 md:w-[calc(100%-2rem)] md:px-10 lg:mb-6 lg:w-[calc(100%-3rem)] lg:px-14 xl:px-24";
+  "mx-4 mb-3 scroll-mt-6 rounded-panel bg-paper px-[max(4px,calc((100%-1440px)/2+20px))] md:mb-4 md:px-[max(24px,calc((100%-1440px)/2+40px))] lg:mb-6 xl:px-[max(104px,calc((100%-1440px)/2+120px))]";
 
 /** Bottom: full panel padding, or just the inner gap when a guide follows. */
 export const joinedBottom =

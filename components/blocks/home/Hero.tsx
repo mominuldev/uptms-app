@@ -1,5 +1,6 @@
 import { Headline } from "@/components/content/Headline";
 import { Picture } from "@/components/content/Picture";
+import { Container } from "@/components/ui/Container";
 import { fillTokens } from "@/lib/tokens";
 import type { TeamMember } from "@/lib/content";
 import type { BlockProps, HeroData, HeroSources } from "../types";
@@ -15,56 +16,58 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
   const tokens = ctx.settings;
   const Heading = ctx.isFirst ? "h1" : "h2";
   const founder = data.show_founder ? sources.founder?.[0] : undefined;
-  const trust = data.show_trust_points ? (sources.trust_points ?? []) : [];
+  const trust = data.show_trust_points ? sources.trust_points ?? [] : [];
   const team = (sources.team ?? []).slice(0, 2);
   const showTeam = data.aside === "team" && (team.length > 0 || data.team_title !== "");
   const showImage = data.aside !== "team" && data.image !== null;
 
   return (
-    <div className="px-3 pt-3 pb-3 md:px-4 md:pt-4 md:pb-4 lg:px-6 lg:pt-6 lg:pb-6" data-block="hero">
+    <div className="px-4 pt-3 pb-3 md:pt-4 md:pb-4 lg:pt-6 lg:pb-6" data-block="hero">
       <section
         id={anchor ?? undefined}
         aria-labelledby="hero-title"
-        className={`mx-auto flex w-full max-w-[1392px] flex-col gap-10 overflow-hidden rounded-panel bg-navy px-5 pt-10 text-white md:px-10 md:pt-14 lg:gap-12 lg:px-14 lg:pt-[72px] xl:px-[72px] ${trust.length > 0 ? "pb-8 md:pb-10" : "pb-10 md:pb-14 lg:pb-[72px]"} ${anchorClasses}`}
+        className={`w-full overflow-hidden rounded-panel bg-navy pt-10 text-white md:pt-14 lg:pt-[72px] ${trust.length > 0 ? "pb-8 md:pb-10" : "pb-10 md:pb-14 lg:pb-[72px]"} ${anchorClasses}`}
       >
-        <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
-          <div className="flex min-w-0 flex-1 flex-col items-start gap-6 lg:gap-7">
-            {data.eyebrow ? <Eyebrow className="text-sky">{data.eyebrow}</Eyebrow> : null}
-            <Headline
-              as={Heading}
-              id="hero-title"
-              text={data.headline}
-              tone="dark"
-              className="font-serif text-[42px] leading-[1.06] tracking-[-0.02em] text-balance md:text-display-l lg:text-[52px] lg:leading-[1.06] xl:text-display-xl"
-            />
-            {data.subheading ? <p className="text-body-l">{data.subheading}</p> : null}
-            {data.body ? <p className="text-body-m text-white/80">{data.body}</p> : null}
-            <Actions className="w-full sm:w-auto">
-              {[
-                <CtaButton key="p" link={data.primary} tokens={tokens} variant="light" className="w-full sm:w-auto" />,
-                <CtaButton key="s" link={data.secondary} tokens={tokens} variant="outlineLight" className="w-full sm:w-auto" />,
-              ]}
-            </Actions>
-            {data.note ? <p className="text-caption text-white/72">{fillTokens(data.note, tokens)}</p> : null}
+        <Container className="flex flex-col gap-10 lg:gap-12">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-6 lg:gap-7">
+              {data.eyebrow ? <Eyebrow className="text-sky">{data.eyebrow}</Eyebrow> : null}
+              <Headline
+                as={Heading}
+                id="hero-title"
+                text={data.headline}
+                tone="dark"
+                className="font-serif text-[42px] leading-[1.06] tracking-[-0.02em] text-balance md:text-display-l lg:text-[52px] lg:leading-[1.06] xl:text-display-xl"
+              />
+              {data.subheading ? <p className="text-body-l">{data.subheading}</p> : null}
+              {data.body ? <p className="text-body-m text-white/80">{data.body}</p> : null}
+              <Actions className="w-full sm:w-auto">
+                {[
+                  <CtaButton key="p" link={data.primary} tokens={tokens} variant="light" className="w-full sm:w-auto" />,
+                  <CtaButton key="s" link={data.secondary} tokens={tokens} variant="outlineLight" className="w-full sm:w-auto" />,
+                ]}
+              </Actions>
+              {data.note ? <p className="text-caption text-white/72">{fillTokens(data.note, tokens)}</p> : null}
+            </div>
+
+            {showImage ? <HeroPhoto data={data} founder={founder} priority={ctx.isFirst} /> : null}
+            {showTeam ? <HeroTeam data={data} team={team} tokens={tokens} /> : null}
           </div>
 
-          {showImage ? <HeroPhoto data={data} founder={founder} priority={ctx.isFirst} /> : null}
-          {showTeam ? <HeroTeam data={data} team={team} tokens={tokens} /> : null}
-        </div>
-
-        {trust.length > 0 ? (
-          <ul aria-label="Why people choose us" className="grid grid-cols-1 gap-3 border-t-[1.5px] border-white pt-6 sm:grid-cols-2 xl:flex">
-            {trust.map((item) => (
-              <li
-                key={item.id}
-                className="flex min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full border-[1.5px] border-white px-[18px] py-3 text-center font-display text-[15px] leading-[1.3] font-bold"
-              >
-                <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-white" />
-                <span className="min-w-0">{item.title}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+          {trust.length > 0 ? (
+            <ul aria-label="Why people choose us" className="grid grid-cols-1 gap-3 border-t-[1.5px] border-white pt-6 sm:grid-cols-2 xl:flex">
+              {trust.map((item) => (
+                <li
+                  key={item.id}
+                  className="flex min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full border-[1.5px] border-white px-[18px] py-3 text-center font-display text-[15px] leading-[1.3] font-bold"
+                >
+                  <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-white" />
+                  <span className="min-w-0">{item.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Container>
       </section>
     </div>
   );
