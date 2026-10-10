@@ -23,6 +23,13 @@ function commitSha() {
 
 const commit = commitSha();
 
+// Fail the build rather than ship a site that cannot reach its API: every page
+// prerenders from it, so a missing origin is a deploy that serves nothing.
+// .env.production carries it for hPanel; CI passes its own.
+if (!process.env.API_URL && process.argv.includes("build")) {
+  throw new Error("API_URL is not set. It must exist when `next build` runs (see .env.production and .env.example).");
+}
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   // The end-to-end run (uptms-ad playwright.config.ts) builds into its own
@@ -30,6 +37,11 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // What hPanel publishes: `.next/standalone/server.js` beside `.next/static` and `public`.
   output: "standalone",
+  // Inline the API origin into the server bundle. The standalone server.js does
+  // not read .env files and hPanel's runtime environment is not guaranteed to
+  // repeat it, so what was present at build time is what the server uses.
+  // Nothing in the browser bundle reads it (lib/api.ts is server-only).
+  env: { API_URL: process.env.API_URL ?? "" },
   cacheComponents: true,
   partialPrefetching: true,
   async headers() {
