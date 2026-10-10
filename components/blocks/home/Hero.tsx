@@ -22,11 +22,11 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
   const showImage = data.aside !== "team" && data.image !== null;
 
   return (
-    <div className="px-4 pt-3 pb-3 md:pt-4 md:pb-4 lg:pt-6 lg:pb-6" data-block="hero">
+    <div className="px-3 pt-3 pb-3 md:px-4 md:pt-0 md:pb-4 lg:pb-6" data-block="hero">
       <section
         id={anchor ?? undefined}
         aria-labelledby="hero-title"
-        className={`w-full overflow-hidden rounded-panel bg-navy pt-10 text-white md:pt-14 lg:pt-[72px] ${trust.length > 0 ? "pb-8 md:pb-10" : "pb-10 md:pb-14 lg:pb-[72px]"} ${anchorClasses}`}
+        className={`w-full overflow-hidden rounded-card bg-navy md:rounded-sheet lg:rounded-panel pt-10 text-white md:pt-14 lg:pt-[72px] ${trust.length > 0 ? "pb-8 md:pb-10" : "pb-10 md:pb-14 lg:pb-[72px]"} ${anchorClasses}`}
       >
         <Container className="flex flex-col gap-10 lg:gap-12">
           <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
@@ -59,7 +59,7 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
               {trust.map((item) => (
                 <li
                   key={item.id}
-                  className="flex min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full border-[1.5px] border-white px-[18px] py-3 text-center font-display text-[15px] leading-[1.3] font-bold"
+                  className="flex min-w-0 flex-1 items-center justify-center gap-2.5 rounded-full border-[1.5px] border-white/38 px-[18px] py-3 text-center font-display text-[15px] leading-[1.3] font-bold"
                 >
                   <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-white" />
                   <span className="min-w-0">{item.title}</span>

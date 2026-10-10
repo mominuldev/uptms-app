@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { SectionRail } from "@/components/ui/SectionRail";
 import type { Link as ContentLink } from "@/lib/content";
 import { isExternal } from "@/lib/tokens";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
 
 /** Shared bits of the TMS / Contact / Quiz blocks. */
 
@@ -50,11 +51,11 @@ export function TextLink({ link, className = "", tone = "royal" }: { link: Conte
 
   return link.href.startsWith("/") ? (
     <Link href={link.href} className={classes}>
-      {label}
+      <ArrowLabel>{label}</ArrowLabel>
     </Link>
   ) : (
     <a href={link.href} className={classes} {...(isExternal(link.href) ? { rel: "noopener" } : {})}>
-      {label}
+      <ArrowLabel>{label}</ArrowLabel>
     </a>
   );
 }

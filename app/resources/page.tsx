@@ -10,6 +10,7 @@ import { SectionRail } from "@/components/ui/SectionRail";
 import { getPostCategories, getPosts } from "@/lib/cms";
 import { indexingAllowed } from "@/lib/seo";
 import { getSiteSettings } from "@/lib/site";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
 
 /**
  * /resources: patient guides from the CMS (uptms-ad, Posts). No Figma frame
@@ -78,7 +79,7 @@ async function Listing({ searchParams }: { searchParams: PageProps<"/resources">
           </span>
           {list.page < list.last_page ? (
             <Button href={pageHref(list.page + 1)} variant="secondary">
-              Older guides →
+              <ArrowLabel>Older guides →</ArrowLabel>
             </Button>
           ) : (
             <span />

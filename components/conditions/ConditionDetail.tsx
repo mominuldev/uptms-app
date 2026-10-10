@@ -9,6 +9,7 @@ import { Picture } from "@/components/content/Picture";
 import type { Condition, ConditionDetail as Detail } from "@/lib/content";
 import type { SiteSettings } from "@/lib/site";
 import { resolveLink } from "@/lib/tokens";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
 
 const reviewed = (date: string) =>
   new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", {
@@ -86,7 +87,7 @@ export function ConditionDetail({ condition, others, settings }: { condition: De
             <Markdown text={condition.detail_body ?? condition.summary} className="flex flex-col gap-5 text-body-l text-ink-soft" />
             {condition.source && (
               <a href={condition.source.href} rel="noopener" className="self-start text-body-s text-royal underline-offset-4 hover:underline">
-                Clinic source: {condition.source.label} →
+                <ArrowLabel>{`Clinic source: ${condition.source.label} →`}</ArrowLabel>
               </a>
             )}
             <p className="rounded-card bg-sky-soft px-6 py-5 text-body-s text-ink">
@@ -138,7 +139,7 @@ export function ConditionDetail({ condition, others, settings }: { condition: De
                     </span>
                     <span className="font-serif text-heading-s">{other.title}</span>
                     <span className="text-body-s text-ink-soft">{other.summary}</span>
-                    <span className="mt-auto pt-2 font-display text-[15px] font-bold text-royal group-hover:underline">Learn more →</span>
+                    <span className="mt-auto pt-2 font-display text-[15px] font-bold text-royal group-hover:underline"><ArrowLabel>Learn more →</ArrowLabel></span>
                   </Link>
                 </li>
               ))}

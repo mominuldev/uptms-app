@@ -3,6 +3,7 @@ import { Picture } from "@/components/content/Picture";
 import type { BlockProps, ConditionCardsData, ConditionsSources } from "../types";
 import { CtaButton, SectionHead } from "./parts";
 import { joinedBottom, joinedSurface } from "./joined";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
 
 /**
  * 02 · Specialties (Figma 26:155): head, one card per published condition
@@ -38,7 +39,7 @@ export function ConditionCardsBlock({ data, sources, number, anchor, ctx }: Bloc
                     href={condition.path}
                     className="mt-auto rounded-sm pt-1 font-display text-[15px] leading-[1.3] font-bold text-royal after:absolute after:inset-0 after:rounded-card after:content-[''] hover:underline"
                   >
-                    {condition.card_link_label || `Learn about ${condition.eyebrow.toLowerCase()} →`}
+                    <ArrowLabel>{condition.card_link_label || `Learn about ${condition.eyebrow.toLowerCase()} →`}</ArrowLabel>
                   </Link>
                 </div>
               </li>

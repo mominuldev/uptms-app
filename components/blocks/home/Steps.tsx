@@ -2,6 +2,7 @@ import { Headline } from "@/components/content/Headline";
 import { resolveLink } from "@/lib/tokens";
 import type { BlockProps, StepsData, StepsSources } from "../types";
 import { Actions, CheckIcon, CtaButton, PlainSection, Rail, TextLink, h2Classes } from "./parts";
+import { ArrowIcon } from "@/components/ui/icons";
 
 /**
  * Steps (Figma 07 · Journey 30:111; TMS 03 · Treatment journey): numbered
@@ -42,9 +43,7 @@ export function StepsBlock({ data, sources, number, anchor, ctx }: BlockProps<St
                   {!journey ? null : last && steps.length > 1 ? (
                     <CheckIcon size={26} className="text-ink-soft" />
                   ) : (
-                    <span aria-hidden="true" className={`font-serif text-heading-s ${first ? "text-sky" : "text-ink-soft"}`}>
-                      →
-                    </span>
+                    <ArrowIcon className={first ? "text-sky" : "text-ink-soft"} />
                   )}
                 </div>
                 <h3 className="mt-6 font-serif text-heading-s md:mt-10">{step.title}</h3>

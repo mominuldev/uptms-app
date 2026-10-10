@@ -5,6 +5,8 @@ import { Picture } from "@/components/content/Picture";
 import { resolveLink } from "@/lib/tokens";
 import type { AreasOfCareData, BlockProps, ConditionsSources } from "../types";
 import { Rail, Surface, TextLink, sectionHeading } from "./parts";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
+import { ArrowIcon } from "@/components/ui/icons";
 
 /** TMS 02 "Our areas of care" (Figma 32:279): a long-form card per published condition. */
 export function AreasOfCare({ data, sources, number, anchor, ctx }: BlockProps<AreasOfCareData, ConditionsSources>) {
@@ -32,13 +34,13 @@ export function AreasOfCare({ data, sources, number, anchor, ctx }: BlockProps<A
                   <Markdown text={condition.detail_body} className="flex flex-col gap-4 text-body-s text-ink-soft" />
                   {condition.source && (
                     <a href={condition.source.href} rel="noopener" className="self-start text-caption text-royal underline-offset-4 hover:underline">
-                      Clinic source: {condition.source.label} →
+                      <ArrowLabel>{`Clinic source: ${condition.source.label} →`}</ArrowLabel>
                     </a>
                   )}
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-1">
                     {cta && <TextLink link={cta} />}
                     <Link href={condition.path} className="rounded-sm font-display text-[15px] font-bold text-ink-soft underline-offset-4 hover:text-ink hover:underline">
-                      Read more <span className="sr-only">about {condition.title}</span> →
+                      Read more <span className="sr-only">about {condition.title}</span> <ArrowIcon className="inline size-[1.25em] align-[-0.2em]" />
                     </Link>
                   </div>
                 </div>

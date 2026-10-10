@@ -7,6 +7,7 @@ import { SectionRail } from "@/components/ui/SectionRail";
 import type { Link as ContentLink } from "@/lib/content";
 import type { SiteSettings } from "@/lib/site";
 import { isExternal, resolveLink } from "@/lib/tokens";
+import { ArrowLabel } from "@/components/ui/ArrowLabel";
 
 /**
  * Building blocks shared by the Home sections (Figma Version C, 25:128).
@@ -150,7 +151,7 @@ export function CtaButton({
 
   return (
     <Button href={resolved.href} variant={variant} className={className} {...(isExternal(resolved.href) ? { rel: "noopener" } : {})}>
-      {resolved.label}
+      <ArrowLabel>{resolved.label}</ArrowLabel>
     </Button>
   );
 }
@@ -177,11 +178,11 @@ export function TextLink({
 
   return resolved.href.startsWith("/") && !resolved.href.startsWith("//") ? (
     <Link href={resolved.href} className={classes}>
-      {resolved.label}
+      <ArrowLabel>{resolved.label}</ArrowLabel>
     </Link>
   ) : (
     <a href={resolved.href} className={classes} {...(isExternal(resolved.href) ? { rel: "noopener" } : {})}>
-      {resolved.label}
+      <ArrowLabel>{resolved.label}</ArrowLabel>
     </a>
   );
 }

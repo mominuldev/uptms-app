@@ -14,7 +14,7 @@ Design (source of truth): https://www.figma.com/design/ij7CwMEI0miNBTQn0lF0AE/UP
 
 ## Rules
 
-- Server Components by default; `'use client'` only for real interactivity (menu, quiz, form, map facade).
+- Server Components by default; `'use client'` only for real interactivity (menu, quiz, form).
 - Never call the API from the browser; `API_URL` is server-only. Cached reads use `'use cache'` + `cacheLife` + `cacheTag`; uncached reads go inside `<Suspense>`.
 - No business rules here: Laravel validates and decides. No analytics or third-party scripts on the contact form or quiz pages (patient privacy); the only exception is Cloudflare Turnstile on the Contact form, when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set.
 - No HTML from the API is ever injected: rich text is a small Markdown dialect parsed into React elements (`components/content/Markdown.tsx`); headlines mark accents with *asterisks*.
