@@ -1,0 +1,136 @@
+name: Diagnose the Hostinger host
+
+# Read-only look at what is actually running on the host, over the same SSH
+# credentials the deploy uses. Run it from the Actions tab when a deploy is
+# green but the site does not change: it prints every Next build on disk,
+# which node processes are alive and since when, and the app's stderr log.
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+
+    steps:
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
+            -H "${{ secrets.HOSTINGER_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      # Every command here only reads. The heredoc is quoted so the host's
+      # shell expands the variables, and the app path arrives as $1.
+      - name: Inspect the host
+        env:
+          APP_PATH: ${{ secrets.HOSTINGER_APP_PATH }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          remote_args=$(printf '%q %q' "$APP_PATH" "$SITE_URL")
+          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
+            "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}" \
+            "bash -s -- $remote_args" <<'REMOTE'
+          app_path=$1
+          site_url=$2
+          section() { printf '\n::group::%s\n' "$1"; }
+          end() { printf '::endgroup::\n'; }
+
+          section "Host"
+          echo "hostname: $(hostname)   user: $(id -un)   date: $(date -u '+%F %T UTC')"
+          echo "app path: $app_path"
+          end
+
+          section "Build in the deploy target"
+          if [ -f "$app_path/.next/BUILD_ID" ]; then
+            printf 'BUILD_ID: '; cat "$app_path/.next/BUILD_ID"; echo
+            stat -c 'written: %y' "$app_path/.next/BUILD_ID"
+          else
+            echo "no .next/BUILD_ID under $app_path"
+          fi
+          ls -la "$app_path" 2>/dev/null | head -40
+          end
+
+          section "Every Next build on disk (a second one is what the site is really serving)"
+          find "$HOME" -path '*/node_modules' -prune -o -path '*/.next/BUILD_ID' -print 2>/dev/null |
+            while read -r f; do printf '%s  ' "$f"; cat "$f"; printf '  '; stat -c '%y' "$f"; done
+          end
+
+          section "Node / Passenger processes (start time tells which build they hold)"
+          ps -o pid,ppid,lstart,etime,rss,args -u "$(id -un)" 2>/dev/null |
+            grep -iE 'PID|[n]ode|[p]assenger|[l]snode|[p]m2|[n]pm' || echo "none"
+          for pid in $(pgrep -u "$(id -un)" -f 'node' 2>/dev/null); do
+            printf 'pid %s cwd -> ' "$pid"; readlink "/proc/$pid/cwd" 2>/dev/null || echo "?"
+          done
+          end
+
+          section "Listening sockets"
+          (ss -ltnp 2>/dev/null || netstat -ltnp 2>/dev/null) | grep -iE 'node|LISTEN' | head -20 || true
+          end
+
+          section "Passenger / LiteSpeed restart marker"
+          ls -la --time-style=full-iso "$app_path/tmp" 2>/dev/null || echo "no tmp/ in app path"
+          end
+
+          section "App stderr log (last 60 lines)"
+          for log in "$app_path/stderr.log" "$app_path"/logs/*.log "$HOME"/logs/*.log; do
+            [ -f "$log" ] || continue
+            echo "== $log ($(stat -c '%y' "$log"))"
+            tail -60 "$log"
+          done
+          end
+
+          section "hPanel Node.js app config, if present"
+          for f in "$app_path/.htaccess" "$HOME/nodevenv"/*/*/bin/activate "$HOME/.passenger" ; do
+            [ -e "$f" ] || continue
+            echo "== $f"; head -40 "$f" 2>/dev/null
+          done
+          ls -la "$HOME/nodevenv" 2>/dev/null || echo "no ~/nodevenv"
+          end
+
+          # hPanel's Node.js deployment ("hbuilds") is what Passenger actually
+          # serves, per the PassengerAppRoot in public_html/.htaccess. It builds
+          # the repo itself on every push; when that build fails the site
+          # silently stays on the last version. Its logs live beside it.
+          hb=$(dirname "$app_path")/hbuilds
+          section "hPanel Node.js deployment ($hb)"
+          if [ -d "$hb" ]; then
+            printf 'current -> '; readlink -f "$hb/current" 2>/dev/null || echo "(no current symlink)"
+            echo "== versions"; ls -la --time-style=full-iso "$hb/versions" 2>/dev/null
+            echo "== source repository"; git -C "$hb/source/repository" log -1 --format='%h %ci %s' 2>/dev/null || ls -la "$hb/source" 2>/dev/null
+            echo "== config env keys (names only)"; sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1/p' "$hb/config/.env" 2>/dev/null
+            repo="$hb/source/repository"
+            echo "== files hPanel adds on top of the repo (untracked/ignored at the root)"
+            git -C "$repo" status --short --ignored 2>/dev/null | grep -vE 'node_modules|\.next/|tsconfig\.tsbuildinfo|next-env\.d\.ts' | head -20
+            for f in "$repo"/next.config.* "$repo"/server.js "$repo"/.npmrc; do
+              [ -f "$f" ] || continue
+              git -C "$repo" ls-files --error-unmatch "$(basename "$f")" >/dev/null 2>&1 && continue
+              echo "---- $f (not in git)"; head -60 "$f"
+            done
+            echo "== hbuilds/config"; ls -la "$hb/config" 2>/dev/null
+            for f in "$hb"/config/*.js "$hb"/config/*.json "$hb"/config/*.sh "$hb"/config/*.y*ml; do
+              [ -f "$f" ] || continue; echo "---- $f"; head -60 "$f"
+            done
+            echo "== published version layout"
+            for v in "$hb"/versions/*/nodejs; do echo "---- $v"; ls -la "$v" | head -30; done
+            echo "== config baked into the published server.js"
+            grep -oE 'const nextConfig = .*' "$hb"/current/nodejs/server.js 2>/dev/null | head -c 3000; echo
+            echo "== newest build log, complete"
+            log=$(ls -t "$hb"/logs/*/*.log 2>/dev/null | head -1)
+            [ -n "$log" ] && { echo "---- $log ($(stat -c '%y' "$log"))"; cat "$log"; }
+            echo "== other logs beside it"; ls -la "$(dirname "$log")" 2>/dev/null
+          else
+            echo "no hbuilds directory"
+          fi
+          end
+
+          section "What the site answers from the host itself"
+          for path in /; do
+            code=$(curl -sS -o /tmp/diag.html -w '%{http_code}' --max-time 20 "$site_url$path?diag=$$" || echo "curl failed")
+            live=$(grep -oE '\\"b\\":\\"[A-Za-z0-9_-]+' /tmp/diag.html | head -1 | sed 's/.*"//')
+            printf '%-10s -> %s  build %s\n' "$path" "$code" "${live:-?}"
+          done
+          end
+          REMOTE
