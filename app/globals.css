@@ -16,6 +16,12 @@
     @apply bg-white font-sans text-ink antialiased;
   }
 
+  /* Tailwind 4 leaves buttons on the default cursor; every button here is clickable. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
   /* Visible keyboard focus everywhere (guideline §24), in the brand royal. */
   :focus-visible {
     outline: 2px solid var(--color-royal);
@@ -29,5 +35,53 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/*
+ * Qualification popup (components/forms/QualifyDialog.tsx): the sheet fades
+ * and rises in, the backdrop fades; closing plays it in reverse. `display`
+ * and `overlay` transition discretely so the dialog stays in the top layer
+ * until the fade ends. Reduced motion is handled by the base layer.
+ */
+.qualify-dialog,
+.qualify-dialog::backdrop {
+  transition:
+    opacity 220ms ease-out,
+    translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    display 220ms allow-discrete,
+    overlay 220ms allow-discrete;
+}
+
+.qualify-dialog {
+  opacity: 0;
+  translate: 0 16px;
+  scale: 0.98;
+}
+
+.qualify-dialog::backdrop {
+  opacity: 0;
+}
+
+.qualify-dialog[open] {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.qualify-dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  .qualify-dialog[open] {
+    opacity: 0;
+    translate: 0 16px;
+    scale: 0.98;
+  }
+
+  .qualify-dialog[open]::backdrop {
+    opacity: 0;
   }
 }

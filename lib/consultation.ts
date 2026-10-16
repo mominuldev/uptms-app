@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { apiUrl } from "./api";
 
 /**
- * The Contact form's server action. The browser never talks to Laravel:
+ * The qualification form's server action (Contact page and the Home hero's popup). The browser never talks to Laravel:
  * this forwards the request server-side to POST /public/consultation-requests,
  * where Laravel validates again and stores it encrypted. With SITE_TOKEN set
  * (= FRONTEND_SITE_TOKEN in uptms-ad) the visitor's IP and user agent are
@@ -12,13 +12,15 @@ import { apiUrl } from "./api";
  * Nothing the person typed is logged here.
  */
 export interface ConsultationInput {
-  name: string;
+  first_name: string;
+  last_name: string;
   phone: string;
   email: string;
+  insurance: string;
+  prior_treatment: string;
+  contact_method: string;
+  /** From a self-check link (?topic=…); "" lets Laravel file it under TMS for depression. */
   topic: string;
-  best_time: string;
-  referred_by: string;
-  message: string;
   website: string;
   source_page: string;
   referrer: string;
@@ -32,7 +34,7 @@ export type ConsultationResult =
   | { status: "rate-limited"; retryAfter: number | null }
   | { status: "failed"; requestId: string | null };
 
-const FIELDS = ["name", "phone", "email", "topic", "best_time", "referred_by", "message", "turnstile_token"] as const;
+const FIELDS = ["first_name", "last_name", "phone", "email", "insurance", "prior_treatment", "contact_method", "turnstile_token"] as const;
 
 export async function submitConsultation(input: ConsultationInput): Promise<ConsultationResult> {
   const incoming = await headers();
@@ -48,13 +50,14 @@ export async function submitConsultation(input: ConsultationInput): Promise<Cons
   }
 
   const body = {
-    name: input.name.trim(),
+    first_name: input.first_name.trim(),
+    last_name: input.last_name.trim(),
     phone: input.phone.trim(),
-    email: input.email.trim() || null,
-    topic: input.topic,
-    best_time: input.best_time || null,
-    referred_by: input.referred_by.trim() || null,
-    message: input.message.trim() || null,
+    email: input.email.trim(),
+    insurance: input.insurance,
+    prior_treatment: input.prior_treatment,
+    contact_method: input.contact_method,
+    topic: input.topic || null,
     website: input.website,
     source_page: input.source_page.startsWith("/") ? input.source_page.slice(0, 190) : null,
     referrer: input.referrer.slice(0, 2000) || null,
@@ -90,7 +93,7 @@ export async function submitConsultation(input: ConsultationInput): Promise<Cons
 
     for (const field of FIELDS) {
       const message = payload.errors[field]?.[0];
-      if (message) errors[field === "message" ? "question" : field] = message;
+      if (message) errors[field] = message;
     }
 
     if (Object.keys(errors).length > 0) return { status: "invalid", errors };

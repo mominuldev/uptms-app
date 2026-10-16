@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useId, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { submitConsultation, type ConsultationResult } from "@/lib/consultation";
+import { acceptsRequests, type ConsultationFormSource } from "./formSource";
 import { Turnstile } from "./Turnstile";
 import { validateConsultation, type ConsultationErrors, type ConsultationValues } from "./validateConsultation";
 
 /**
- * Consultation request form (Figma 33:430). Checks fields in the browser,
- * then a server action forwards the request to Laravel, which validates
- * again and stores it encrypted. Nothing is tracked, logged or kept in the
- * browser; on success the fields are cleared.
+ * "Find out if you qualify for TMS" form: inline on the Contact page and in
+ * the Home hero's popup. Checks fields in the browser, then a server action
+ * forwards the request to Laravel, which validates again and stores it
+ * encrypted. Nothing is tracked, logged or kept in the browser; on success
+ * the fields are cleared.
  */
-export interface ConsultationFormSource {
-  accepting: boolean;
-  topics: { value: string; label: string }[];
-  best_times: { value: string; label: string }[];
-}
+export type { ConsultationFormSource };
 
 interface Props {
   title: string;
@@ -26,20 +24,26 @@ interface Props {
   successBody: string;
   phone: { display: string; href: string };
   form: ConsultationFormSource | null;
+  /** Insurance partner names; "Other" and "No insurance" are always offered. */
+  insurers: string[];
+  /** "card" on a page; "bare" inside the popup, which draws its own sheet and title. */
+  frame?: "card" | "bare";
+  titleId?: string;
 }
 
 type Status = { kind: "idle" } | { kind: "sent"; reference: string | null } | { kind: "rate-limited"; retryAfter: number | null } | { kind: "failed"; requestId: string | null };
 
-const EMPTY: ConsultationValues = { name: "", phone: "", email: "", topic: "", best_time: "", referred_by: "", question: "" };
+const EMPTY: ConsultationValues = { first_name: "", last_name: "", phone: "", email: "", insurance: "", prior_treatment: "", contact_method: "" };
+const EXTRA_INSURANCE = ["Other", "No insurance"];
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const UTM_KEYS = ["source", "medium", "campaign"] as const;
 
 const fieldClasses = (invalid: boolean) =>
   `h-[53px] w-full min-w-0 rounded-control border-[1.5px] bg-white px-[18px] text-body-m text-ink placeholder:text-ink-soft/70 outline-none transition-colors focus:border-royal focus:ring-2 focus:ring-royal/20 ${
-    invalid ? "border-danger" : "border-ink-soft"
+    invalid ? "border-danger" : "border-ink-soft/60"
   }`;
 
-export function ConsultationForm({ title, notice, help, submitLabel, successBody, phone, form }: Props) {
+export function ConsultationForm({ title, notice, help, submitLabel, successBody, phone, form, insurers, frame = "card", titleId }: Props) {
   const id = useId();
   const [values, setValues] = useState<ConsultationValues>(EMPTY);
   const [errors, setErrors] = useState<ConsultationErrors>({});
@@ -50,29 +54,20 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
   const honeypot = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-  const topics = form?.topics ?? [];
+  const insurance = [...insurers.filter((name) => !EXTRA_INSURANCE.includes(name)), ...EXTRA_INSURANCE];
+  const Frame = frame === "card" ? CardFrame : BareFrame;
 
-  // A self-check result can link here with ?topic=…; pre-select it once.
-  useEffect(() => {
-    const wanted = new URLSearchParams(window.location.search).get("topic");
-
-    if (wanted && topics.some((topic) => topic.value === wanted)) {
-      setValues((current) => (current.topic === "" ? { ...current, topic: wanted } : current));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- read the URL once on arrival
-  }, []);
-
-  if (!form?.accepting) {
+  if (!acceptsRequests(form)) {
     return (
-      <FormFrame title={title}>
+      <Frame title={title} titleId={titleId}>
         <p className="rounded-[16px] bg-sky-soft px-4 py-3.5 text-body-m text-ink">
-          To request a consultation, call the clinic at{" "}
+          To find out if you qualify, call the clinic at{" "}
           <a href={phone.href} className="font-bold text-royal underline-offset-4 hover:underline">
             {phone.display}
           </a>
           .
         </p>
-      </FormFrame>
+      </Frame>
     );
   }
 
@@ -84,7 +79,7 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
   const announce = () => requestAnimationFrame(() => statusRef.current?.focus());
 
   const focusFirst = (found: ConsultationErrors) => {
-    const first = (Object.keys(found) as (keyof ConsultationErrors)[]).find((key) => found[key]);
+    const first = (Object.keys(EMPTY) as (keyof ConsultationValues)[]).find((key) => found[key]);
     if (first) formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
   };
 
@@ -109,6 +104,9 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
     }
 
     const params = new URLSearchParams(window.location.search);
+    // A self-check result can link here with ?topic=…; it travels with the request.
+    const wanted = params.get("topic") ?? "";
+    const topic = form.topics.some((option) => option.value === wanted) ? wanted : "";
     const utm: Record<string, string> = {};
     for (const key of UTM_KEYS) {
       const value = params.get(`utm_${key}`);
@@ -120,13 +118,8 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
 
       try {
         result = await submitConsultation({
-          name: values.name,
-          phone: values.phone,
-          email: values.email,
-          topic: values.topic,
-          best_time: values.best_time,
-          referred_by: values.topic === "provider_referral" ? values.referred_by : "",
-          message: values.question,
+          ...values,
+          topic,
           website: honeypot.current?.value ?? "",
           source_page: window.location.pathname,
           referrer: document.referrer,
@@ -166,7 +159,7 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
 
   if (status.kind === "sent") {
     return (
-      <FormFrame title={title}>
+      <Frame title={title} titleId={titleId}>
         <div ref={statusRef} tabIndex={-1} role="status" className="flex flex-col items-start gap-4 rounded-[20px] bg-sky-soft px-6 py-7 outline-none">
           <span aria-hidden="true" className="flex size-11 items-center justify-center rounded-full bg-royal text-white">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -184,11 +177,12 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
             Send another request
           </button>
         </div>
-      </FormFrame>
+      </Frame>
     );
   }
 
   const describe = (key: keyof ConsultationErrors) => (errors[key] ? `${id}-${key}-error` : undefined);
+  const invalid = (key: keyof ConsultationErrors) => Boolean(errors[key]) || undefined;
 
   const error = (key: keyof ConsultationErrors) =>
     errors[key] ? (
@@ -197,84 +191,76 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
       </p>
     ) : null;
 
-  const label = (key: string, text: string) => (
-    <label htmlFor={`${id}-${key}`} className="font-display text-[15px] font-bold">
-      {text}
-    </label>
+  const field = (key: keyof ConsultationValues, text: string, control: ReactNode, className = "") => (
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      <label htmlFor={`${id}-${key}`} className="font-display text-[15px] font-bold">
+        {text}
+      </label>
+      {control}
+      {error(key)}
+    </div>
   );
 
-  const referral = values.topic === "provider_referral";
+  const choices = (key: keyof ConsultationValues, options: { value: string; label: string }[]) => (
+    <SelectBox id={`${id}-${key}`} name={key} value={values[key]} onChange={set(key)} invalid={Boolean(errors[key])} describedBy={describe(key)}>
+      <option value="" disabled>
+        Please select…
+      </option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </SelectBox>
+  );
 
   return (
-    <FormFrame title={title}>
+    <Frame title={title} titleId={titleId}>
       {notice && <p className="rounded-[16px] bg-sky-soft px-4 py-3.5 text-body-s text-ink">{notice}</p>}
       <form ref={formRef} noValidate onSubmit={onSubmit} className="flex flex-col gap-5" aria-describedby={help ? `${id}-help` : undefined} aria-busy={pending || undefined}>
         <div className="grid gap-5 sm:grid-cols-2 sm:gap-4">
-          <div className="flex min-w-0 flex-col gap-2">
-            {label("name", "Name *")}
-            <input id={`${id}-name`} name="name" autoComplete="name" required maxLength={120} value={values.name} onChange={set("name")} placeholder="Your name" aria-invalid={Boolean(errors.name) || undefined} aria-describedby={describe("name")} className={fieldClasses(Boolean(errors.name))} />
-            {error("name")}
-          </div>
-          <div className="flex min-w-0 flex-col gap-2">
-            {label("phone", "Phone *")}
-            <input id={`${id}-phone`} name="phone" type="tel" autoComplete="tel" required maxLength={30} value={values.phone} onChange={set("phone")} placeholder="(253) 555-0142" aria-invalid={Boolean(errors.phone) || undefined} aria-describedby={describe("phone")} className={fieldClasses(Boolean(errors.phone))} />
-            {error("phone")}
-          </div>
-          <div className="flex min-w-0 flex-col gap-2">
-            {label("email", "Email (optional)")}
-            <input id={`${id}-email`} name="email" type="email" autoComplete="email" maxLength={190} value={values.email} onChange={set("email")} placeholder="you@example.com" aria-invalid={Boolean(errors.email) || undefined} aria-describedby={describe("email")} className={fieldClasses(Boolean(errors.email))} />
-            {error("email")}
-          </div>
-          <div className="flex min-w-0 flex-col gap-2">
-            {label("topic", "How can we help? *")}
-            <SelectBox id={`${id}-topic`} name="topic" value={values.topic} onChange={set("topic")} invalid={Boolean(errors.topic)} describedBy={describe("topic")}>
-              <option value="" disabled>
-                Choose a topic
-              </option>
-              {topics.map((topic) => (
-                <option key={topic.value} value={topic.value}>
-                  {topic.label}
-                </option>
-              ))}
-            </SelectBox>
-            {error("topic")}
-          </div>
-          <div className={`flex min-w-0 flex-col gap-2 ${referral ? "" : "sm:col-span-2"}`}>
-            {label("best_time", "Best time to call (optional)")}
-            <SelectBox id={`${id}-best_time`} name="best_time" value={values.best_time} onChange={set("best_time")} invalid={false} describedBy={undefined}>
-              <option value="">Any time</option>
-              {form.best_times
-                .filter((time) => time.value !== "anytime")
-                .map((time) => (
-                  <option key={time.value} value={time.value}>
-                    {time.label}
-                  </option>
-                ))}
-            </SelectBox>
-          </div>
-          {referral && (
-            <div className="flex min-w-0 flex-col gap-2">
-              {label("referred_by", "Referring provider (optional)")}
-              <input id={`${id}-referred_by`} name="referred_by" maxLength={160} value={values.referred_by} onChange={set("referred_by")} placeholder="Name and practice" aria-invalid={Boolean(errors.referred_by) || undefined} aria-describedby={describe("referred_by")} className={fieldClasses(Boolean(errors.referred_by))} />
-              {error("referred_by")}
-            </div>
+          {field(
+            "first_name",
+            "First Name *",
+            <input id={`${id}-first_name`} name="first_name" autoComplete="given-name" required maxLength={60} value={values.first_name} onChange={set("first_name")} placeholder="Your first name" aria-invalid={invalid("first_name")} aria-describedby={describe("first_name")} className={fieldClasses(Boolean(errors.first_name))} />,
           )}
-        </div>
-        <div className="flex flex-col gap-2">
-          {label("question", "Your question (optional)")}
-          <textarea
-            id={`${id}-question`}
-            name="question"
-            rows={4}
-            maxLength={1000}
-            value={values.question}
-            onChange={set("question")}
-            placeholder="Keep your question general. Please do not include medical records or sensitive details."
-            aria-invalid={Boolean(errors.question) || undefined}
-            aria-describedby={describe("question")}
-            className={`${fieldClasses(Boolean(errors.question))} h-auto min-h-[120px] resize-y py-3.5`}
-          />
-          {error("question")}
+          {field(
+            "last_name",
+            "Last Name *",
+            <input id={`${id}-last_name`} name="last_name" autoComplete="family-name" required maxLength={60} value={values.last_name} onChange={set("last_name")} placeholder="Your last name" aria-invalid={invalid("last_name")} aria-describedby={describe("last_name")} className={fieldClasses(Boolean(errors.last_name))} />,
+          )}
+          {field(
+            "phone",
+            "Phone *",
+            <div className="relative">
+              <span aria-hidden="true" className="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-body-m font-bold text-ink-soft">
+                +1
+              </span>
+              <input id={`${id}-phone`} name="phone" type="tel" autoComplete="tel-national" required maxLength={30} value={values.phone} onChange={set("phone")} placeholder="(253) 555-0142" aria-invalid={invalid("phone")} aria-describedby={describe("phone")} className={`${fieldClasses(Boolean(errors.phone))} pl-12`} />
+            </div>,
+          )}
+          {field(
+            "email",
+            "Email *",
+            <div className="relative">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" className="pointer-events-none absolute top-1/2 left-[18px] -translate-y-1/2 text-ink-soft">
+                <rect x="1.75" y="3.75" width="14.5" height="10.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M2.5 5l6.5 4.75L15.5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <input id={`${id}-email`} name="email" type="email" autoComplete="email" required maxLength={190} value={values.email} onChange={set("email")} placeholder="Your best email" aria-invalid={invalid("email")} aria-describedby={describe("email")} className={`${fieldClasses(Boolean(errors.email))} pl-12`} />
+            </div>,
+          )}
+          {field(
+            "insurance",
+            "Insurance Name *",
+            choices(
+              "insurance",
+              insurance.map((name) => ({ value: name, label: name })),
+            ),
+            "sm:col-span-2",
+          )}
+          {field("prior_treatment", "Have you tried therapy and antidepressants? *", choices("prior_treatment", form.prior_treatments), "sm:col-span-2")}
+          {field("contact_method", "Preferred method of communication *", choices("contact_method", form.contact_methods), "sm:col-span-2")}
         </div>
         {/* Honeypot: off-screen and hidden from assistive technology; bots fill it in. */}
         <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
@@ -316,14 +302,31 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
           )}
         </div>
       </form>
-    </FormFrame>
+    </Frame>
   );
 }
 
-function FormFrame({ title, children }: { title: string; children: ReactNode }) {
+function CardFrame({ title, titleId, children }: { title: string; titleId?: string; children: ReactNode }) {
   return (
     <div className="relative flex flex-col gap-6 rounded-sheet border border-line bg-white p-6 shadow-[0_24px_48px_rgba(14,48,78,0.08)] md:p-10">
-      {title && <h3 className="font-serif text-[28px] leading-[1.15] tracking-[-0.015em] md:text-[32px]">{title}</h3>}
+      {title && (
+        <h3 id={titleId} className="font-serif text-[28px] leading-[1.15] tracking-[-0.015em] md:text-[32px]">
+          {title}
+        </h3>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function BareFrame({ title, titleId, children }: { title: string; titleId?: string; children: ReactNode }) {
+  return (
+    <div className="relative flex flex-col gap-6">
+      {title && (
+        <h2 id={titleId} className="pr-10 font-serif text-[30px] leading-[1.12] tracking-[-0.015em] md:text-center md:text-[36px]">
+          {title}
+        </h2>
+      )}
       {children}
     </div>
   );

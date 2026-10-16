@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { validateConsultation } from "./validateConsultation";
 
-const base = { name: "Sam", phone: "(253) 555-0142", email: "", topic: "tms_depression", best_time: "", referred_by: "", question: "" };
+const base = { first_name: "Sam", last_name: "Lee", phone: "(253) 555-0142", email: "sam@example.com", insurance: "Premera Blue Cross", prior_treatment: "both", contact_method: "phone" };
 
 describe("validateConsultation", () => {
-  it("accepts a name, a U.S. phone number and a topic; the rest is optional", () => {
+  it("accepts a complete answer", () => {
     expect(validateConsultation(base)).toEqual({});
     expect(validateConsultation({ ...base, phone: "+1 253 555 0142" })).toEqual({});
   });
 
-  it("requires name, phone and topic and checks formats", () => {
-    expect(Object.keys(validateConsultation({ ...base, name: " ", phone: "", topic: "" }))).toEqual(["name", "phone", "topic"]);
+  it("requires every field and checks formats", () => {
+    const empty = { first_name: " ", last_name: "", phone: "", email: "", insurance: "", prior_treatment: "", contact_method: "" };
+    expect(Object.keys(validateConsultation(empty))).toEqual(["first_name", "last_name", "phone", "email", "insurance", "prior_treatment", "contact_method"]);
     expect(validateConsultation({ ...base, phone: "12345" }).phone).toBeDefined();
     expect(validateConsultation({ ...base, phone: "2 253 555 0142" }).phone).toBeDefined();
-    expect(validateConsultation({ ...base, email: "nope" }).email).toBeDefined();
-    expect(validateConsultation({ ...base, question: "a".repeat(1001) }).question).toBe("Keep your question under 1,000 characters.");
+    expect(validateConsultation({ ...base, email: "nope" }).email).toBe("Enter a valid email address, e.g. you@example.com.");
+    expect(validateConsultation({ ...base, last_name: "a".repeat(61) }).last_name).toBe("Keep your last name under 60 characters.");
   });
 });

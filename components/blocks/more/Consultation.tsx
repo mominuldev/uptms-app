@@ -5,7 +5,7 @@ import { ConsultationForm } from "@/components/forms/ConsultationForm";
 import type { BlockProps, ConsultationData, ConsultationSources } from "../types";
 import { DotList, Rail } from "./parts";
 
-/** Contact 01 "Free initial phone consultation" (Figma 33:404): copy beside the request form. */
+/** Contact 01 "Free initial phone consultation" (Figma 33:404): copy beside the qualification form. */
 export function Consultation({ data, sources, number, anchor, ctx }: BlockProps<ConsultationData, ConsultationSources>) {
   const headingId = anchor ? `${anchor}-title` : "consultation-title";
   const { email } = ctx.settings;
@@ -41,6 +41,7 @@ export function Consultation({ data, sources, number, anchor, ctx }: BlockProps<
             successBody={fillTokens(data.success_body || "The team will call you within one business day during office hours.", ctx.settings)}
             phone={ctx.settings.phone}
             form={sources?.form ?? null}
+            insurers={(sources?.insurers ?? []).map((insurer) => insurer.name)}
           />
         </div>
       </div>

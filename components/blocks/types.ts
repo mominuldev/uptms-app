@@ -1,6 +1,6 @@
 import type { ApiSettings, Condition, ContentItem, Faq, InsurancePartner, Link, MenuLink, PublicImage, Quiz, TeamMember, Testimonial } from "@/lib/content";
 import type { SiteSettings } from "@/lib/site";
-import type { ConsultationFormSource } from "@/components/forms/ConsultationForm";
+import type { ConsultationFormSource } from "@/components/forms/formSource";
 
 /**
  * Block data as the API sends it, one interface per block type
@@ -16,7 +16,9 @@ export interface HeroData {
   subheading: string;
   body: string;
   primary: Link;
-  secondary: Link;
+  /** The button opens the qualification form in a popup instead of following its link. */
+  primary_opens_form: boolean;
+  form_title: string;
   note: string;
   aside: "image" | "team";
   image: PublicImage | null;
@@ -33,6 +35,9 @@ export interface HeroSources {
   founder?: TeamMember[];
   trust_points?: ContentItem[];
   team?: TeamMember[];
+  /** Only with `primary_opens_form`; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface SectionNavData {
@@ -68,6 +73,7 @@ export interface ConsultationData extends Rail {
 export interface ConsultationSources {
   /** Topics and call times from the consultation inbox; missing when it is switched off. */
   form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface ConditionCardsData extends Rail {

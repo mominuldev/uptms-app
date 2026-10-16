@@ -1,5 +1,7 @@
 import { Headline } from "@/components/content/Headline";
 import { Picture } from "@/components/content/Picture";
+import { acceptsRequests } from "@/components/forms/formSource";
+import { QualifyDialog } from "@/components/forms/QualifyDialog";
 import { Container } from "@/components/ui/Container";
 import { fillTokens } from "@/lib/tokens";
 import type { TeamMember } from "@/lib/content";
@@ -8,7 +10,7 @@ import { Actions, CtaButton, Eyebrow, TextLink, anchorClasses, nameWithCredentia
 
 /**
  * Hero (Figma 26:70): navy panel, display headline with the sky accent,
- * two buttons and small print; on the right either the photo with its
+ * one button (optionally opening the qualification form) and small print; on the right either the photo with its
  * caption card and founder chip (Home, TMS) or the team card (Contact).
  * The optional trust strip closes the panel.
  */
@@ -20,6 +22,8 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
   const team = (sources.team ?? []).slice(0, 2);
   const showTeam = data.aside === "team" && (team.length > 0 || data.team_title !== "");
   const showImage = data.aside !== "team" && data.image !== null;
+  // Without the inbox (or without a label) the button falls back to its link.
+  const form = data.primary_opens_form && data.primary.label !== "" && acceptsRequests(sources.form) ? sources.form : null;
 
   return (
     <div className="px-3 pt-3 pb-3 md:px-4 md:pt-0 md:pb-4 lg:pb-6" data-block="hero">
@@ -43,8 +47,23 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
               {data.body ? <p className="text-body-m text-white/80">{data.body}</p> : null}
               <Actions className="w-full sm:w-auto">
                 {[
-                  <CtaButton key="p" link={data.primary} tokens={tokens} variant="light" className="w-full sm:w-auto" />,
-                  <CtaButton key="s" link={data.secondary} tokens={tokens} variant="outlineLight" className="w-full sm:w-auto" />,
+                  form ? (
+                    <QualifyDialog
+                      key="p"
+                      label={fillTokens(data.primary.label, tokens)}
+                      className="w-full sm:w-auto"
+                      title={data.form_title || "Find out if you qualify for TMS"}
+                      notice=""
+                      help=""
+                      submitLabel="Submit Inquiry"
+                      successBody={fillTokens("The team will reach out within one business day during office hours. If you need help sooner, call {phone}.", tokens)}
+                      phone={tokens.phone}
+                      form={form}
+                      insurers={(sources.insurers ?? []).map((insurer) => insurer.name)}
+                    />
+                  ) : (
+                    <CtaButton key="p" link={data.primary} tokens={tokens} variant="light" className="w-full sm:w-auto" />
+                  ),
                 ]}
               </Actions>
               {data.note ? <p className="text-caption text-white/72">{fillTokens(data.note, tokens)}</p> : null}
