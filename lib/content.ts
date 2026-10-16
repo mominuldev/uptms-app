@@ -130,30 +130,78 @@ export interface ConditionDetail extends Condition {
   seo: Seo;
 }
 
-export interface QuizQuestion {
-  key: string;
-  prompt: string;
-  layout: "stack" | "grid";
-  choices: { label: string; value: string }[];
+/** The self-check document, v2 (uptms-ad docs/QUIZ.md). */
+export type QuizStepType = "name" | "single" | "multi" | "email" | "phone" | "text" | "results";
+export type QuizLayout = "grid" | "stack" | "buttons" | "select";
+
+export interface QuizChoice {
+  label: string;
+  value: string;
+  points: number | null;
+  /** Multi only: picking it clears the other choices ("None of the above"). */
+  exclusive: boolean;
+  /** Single only: picking it shows the crisis panel. */
+  crisis: boolean;
 }
 
-export interface QuizResult {
-  when: { question: string; value: string }[];
+export interface QuizCondition {
+  step: string;
+  op: "in" | "not_in";
+  values: string[];
+}
+
+export interface QuizStep {
+  key: string;
+  type: QuizStepType;
+  /** `*word*` is shown emphasised. Empty on a results step: the scale's title is used. */
+  prompt: string;
+  help: string;
+  required: boolean;
+  layout: QuizLayout;
+  choices: QuizChoice[];
+  scale: string | null;
+  show_if: QuizCondition[];
+}
+
+export interface QuizBand {
+  min: number;
+  max: number;
   title: string;
   body: string;
-  primary: Link;
-  secondary: Link;
-  is_default: boolean;
+}
+
+export interface QuizScale {
+  key: string;
+  label: string;
+  instrument: string;
+  title: string;
+  bands: QuizBand[];
 }
 
 export interface Quiz {
-  header_label: string;
-  submit_label: string;
+  version: 2;
+  intro: { title: string; body: string; start_label: string; note: string };
   privacy_note: string;
-  result_eyebrow: string;
+  steps: QuizStep[];
+  scales: QuizScale[];
+  crisis: { title: string; body: string };
   result_disclaimer: string;
-  questions: QuizQuestion[];
-  results: QuizResult[];
+  done: { title: string; body: string; primary: Link; secondary: Link };
+}
+
+/** One answer: single → value, multi → values, name → first/last, email/phone/text → text. */
+export type QuizAnswer = string | string[] | { first: string; last: string };
+
+/** A scale as scored by Laravel (POST /public/quiz-submissions). */
+export interface QuizScaleResult {
+  key: string;
+  label: string;
+  instrument: string;
+  title: string;
+  score: number;
+  max: number;
+  band: { title: string; body: string; min: number; max: number };
+  bands: { min: number; max: number; title: string }[];
 }
 
 /** One section of a page. `data` follows the block's field schema (uptms-ad packages/pages/src/Blocks/BlockTypes.php). */

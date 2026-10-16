@@ -1,7 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
 import { apiUrl } from "./api";
+import { visitorHeaders } from "./visitor";
 
 /**
  * The qualification form's server action (Contact page and the Home hero's popup). The browser never talks to Laravel:
@@ -37,17 +37,7 @@ export type ConsultationResult =
 const FIELDS = ["first_name", "last_name", "phone", "email", "insurance", "prior_treatment", "contact_method", "turnstile_token"] as const;
 
 export async function submitConsultation(input: ConsultationInput): Promise<ConsultationResult> {
-  const incoming = await headers();
-  const forwarded: Record<string, string> = {};
-  const token = process.env.SITE_TOKEN;
-
-  if (token) {
-    const ip = (incoming.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || incoming.get("x-real-ip") || "";
-    forwarded["X-Uptms-Site-Token"] = token;
-    if (ip) forwarded["X-Uptms-Client-Ip"] = ip;
-    const agent = incoming.get("user-agent");
-    if (agent) forwarded["X-Uptms-Client-Agent"] = agent.slice(0, 512);
-  }
+  const forwarded = await visitorHeaders();
 
   const body = {
     first_name: input.first_name.trim(),
