@@ -1,6 +1,6 @@
 import { Headline } from "@/components/content/Headline";
 import { Picture } from "@/components/content/Picture";
-import { SelfCheck } from "@/components/quiz/SelfCheck";
+import { QuizWizard } from "@/components/quiz/QuizWizard";
 import { resolveLink } from "@/lib/tokens";
 import type { BlockProps, QuizBlockData, QuizSources } from "../types";
 import { Rail, Surface } from "./parts";
@@ -21,9 +21,9 @@ function NoBreakPhone({ text, phone }: { text: string; phone: string }) {
 }
 
 /**
- * Quiz "Assessment" (Figma 34:428). The intro is server-rendered; the quiz
- * card is a client island that receives the published quiz with every
- * {phone} / tel:clinic token already resolved.
+ * Quiz "Assessment" (Figma 34:428). The intro is server-rendered; the
+ * self-check wizard is a client island that receives the published quiz,
+ * with the done card's {phone} / tel:clinic links already resolved.
  */
 export function QuizBlock({ data, sources, number, anchor, ctx }: BlockProps<QuizBlockData, QuizSources>) {
   const quiz = sources.quiz;
@@ -72,22 +72,12 @@ export function QuizBlock({ data, sources, number, anchor, ctx }: BlockProps<Qui
             )}
           </div>
           <div className="min-w-0 flex-1">
-            {quiz ? (
-              <SelfCheck
-                headerLabel={quiz.header_label}
-                submitLabel={quiz.submit_label}
-                privacyNote={quiz.privacy_note}
-                resultEyebrow={quiz.result_eyebrow}
-                resultDisclaimer={quiz.result_disclaimer}
-                questions={quiz.questions}
-                results={quiz.results.map((result) => ({
-                  when: result.when,
-                  is_default: result.is_default,
-                  title: result.title,
-                  body: result.body,
-                  primary: resolveLink(result.primary, ctx.settings),
-                  secondary: resolveLink(result.secondary, ctx.settings),
-                }))}
+            {quiz?.version === 2 ? (
+              <QuizWizard
+                quiz={quiz}
+                phone={ctx.settings.phone}
+                donePrimary={resolveLink(quiz.done.primary, ctx.settings)}
+                doneSecondary={resolveLink(quiz.done.secondary, ctx.settings)}
               />
             ) : (
               <div className="rounded-sheet bg-white p-8 text-body-m text-ink-soft">
