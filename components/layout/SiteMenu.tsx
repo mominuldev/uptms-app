@@ -173,8 +173,8 @@ export function SiteMenu({ settings, menus }: { settings: SiteSettings; menus: S
                 Menu
               </p>
               <ul className="flex flex-col gap-1">
-                {menus.mobile.map((item) => (
-                  <li key={item.href}>
+                {menus.mobile.map((item, index) => (
+                  <li key={`${item.href}-${index}`}>
                     <MenuLink item={item} current={isActivePath(pathname, item.href)} />
                   </li>
                 ))}

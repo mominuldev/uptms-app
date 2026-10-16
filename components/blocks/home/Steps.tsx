@@ -62,8 +62,8 @@ export function StepsBlock({ data, sources, number, anchor, ctx }: BlockProps<St
             {data.panel_warning ? <p className="text-body-m font-bold">{data.panel_warning}</p> : null}
             {panelLinks.length > 0 ? (
               <ul className="flex flex-col gap-x-6 gap-y-2 pt-1 sm:flex-row sm:flex-wrap">
-                {panelLinks.map((link) => (
-                  <li key={link.href}>
+                {panelLinks.map((link, index) => (
+                  <li key={`${link.href}-${index}`}>
                     <a href={link.href} rel="noopener" className="rounded-sm font-display text-[14px] leading-[1.3] font-bold text-sky underline-offset-4 hover:underline">
                       {link.label}
                     </a>

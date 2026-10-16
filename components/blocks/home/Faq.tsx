@@ -52,7 +52,7 @@ export function FaqBlock({ data, sources, number, anchor, ctx }: BlockProps<FaqD
                 <>
                   {lead ? `${data.footnote} ` : "Learn more: "}
                   {footnoteLinks.map((link, index) => (
-                    <span key={link.href}>
+                    <span key={`${link.href}-${index}`}>
                       {index > 0 ? " · " : null}
                       <a href={link.href} rel="noopener" className="underline-offset-4 hover:text-royal hover:underline">
                         {link.label}

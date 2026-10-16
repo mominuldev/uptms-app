@@ -12,11 +12,11 @@ import type { NavItem } from "@/lib/site";
 export function PrimaryNav({ items, pathname }: { items: NavItem[]; pathname?: string | null }) {
   return (
     <ul className="flex items-center gap-1 rounded-full border border-line p-1.5">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const current = isActivePath(pathname, item.href);
 
         return (
-          <li key={item.href}>
+          <li key={`${item.href}-${index}`}>
             <Link
               href={item.href}
               aria-current={current ? "page" : undefined}

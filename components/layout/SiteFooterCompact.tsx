@@ -26,8 +26,8 @@ export function SiteFooterCompact({ settings, menus }: { settings: SiteSettings;
             className="grid grid-flow-col grid-cols-2 gap-x-6 gap-y-2.5 text-body-s"
             style={{ gridTemplateRows: `repeat(${rows}, auto)` }}
           >
-            {menus.footer.map((item) => (
-              <li key={item.href} className="min-w-0">
+            {menus.footer.map((item, index) => (
+              <li key={`${item.href}-${index}`} className="min-w-0">
                 <Link href={item.href} className="rounded-sm text-white/86 underline-offset-4 hover:text-white hover:underline">
                   {item.label}
                 </Link>
