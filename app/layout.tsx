@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { MobileCtaBar } from "@/components/layout/MobileCtaBar";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteFooterCompact } from "@/components/layout/SiteFooterCompact";
@@ -50,6 +51,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to main content
         </a>
+        <AnnouncementBar settings={settings} />
         <SiteHeader settings={settings} menus={menus} />
         <SiteHeaderCompact settings={settings} menus={menus} />
         <main id="main" tabIndex={-1} className="flex flex-1 flex-col focus:outline-none">

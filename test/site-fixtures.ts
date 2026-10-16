@@ -16,6 +16,7 @@ export const settings: SiteSettings = {
     crisis: "This site is not a crisis service. In the U.S., call or text 988 for crisis support; call 911 for an immediate emergency.",
     crisisShort: "Not a crisis service. Call or text 988 for crisis support; call 911 for an immediate emergency.",
   },
+  announcement: null,
 };
 
 const primary = [

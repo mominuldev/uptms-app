@@ -26,7 +26,12 @@ export interface SiteSettings {
   serviceArea: string;
   phone: { display: string; href: string };
   email: string;
-  address: { street: string; locality: string; region: string; postalCode: string };
+  address: {
+    street: string;
+    locality: string;
+    region: string;
+    postalCode: string;
+  };
   hours: {
     /** "Mon–Fri, 8am–5pm" (utility bar, footer). */
     short: string;
@@ -40,6 +45,8 @@ export interface SiteSettings {
     crisis: string;
     crisisShort: string;
   };
+  /** Clinic settings → Announcement bar; null while switched off. */
+  announcement: { text: string; link: NavItem | null } | null;
 }
 
 export interface SiteMenus {
@@ -65,7 +72,13 @@ export async function getSiteMenus(): Promise<SiteMenus> {
   return toSiteMenus(await getMenus());
 }
 
-const SOCIAL = new Set<SocialLink["network"]>(["facebook", "instagram", "linkedin", "youtube", "x"]);
+const SOCIAL = new Set<SocialLink["network"]>([
+  "facebook",
+  "instagram",
+  "linkedin",
+  "youtube",
+  "x",
+]);
 
 export function toSiteSettings(api: ApiSettings): SiteSettings {
   const { clinic } = api;
@@ -85,17 +98,44 @@ export function toSiteSettings(api: ApiSettings): SiteSettings {
     hours: { short: api.hours.short, long: api.hours.long },
     mainSiteUrl: clinic.main_site_url ?? "/",
     social: clinic.social
-      .filter((item): item is { network: SocialLink["network"]; url: string } => SOCIAL.has(item.network as SocialLink["network"]))
-      .map((item) => ({ network: item.network, label: item.network === "x" ? "X" : item.network[0]!.toUpperCase() + item.network.slice(1), href: item.url })),
-    legal: { copyright: api.legal.copyright, crisis: api.legal.crisis, crisisShort: api.legal.crisis_short },
+      .filter((item): item is { network: SocialLink["network"]; url: string } =>
+        SOCIAL.has(item.network as SocialLink["network"])
+      )
+      .map((item) => ({
+        network: item.network,
+        label:
+          item.network === "x"
+            ? "X"
+            : item.network[0]!.toUpperCase() + item.network.slice(1),
+        href: item.url,
+      })),
+    legal: {
+      copyright: api.legal.copyright,
+      crisis: api.legal.crisis,
+      crisisShort: api.legal.crisis_short,
+    },
+    announcement: api.announcement
+      ? {
+          text: api.announcement.text,
+          link:
+            api.announcement.link_label && api.announcement.link_url
+              ? {
+                  label: api.announcement.link_label,
+                  href: api.announcement.link_url,
+                }
+              : null,
+        }
+      : null,
   };
 }
 
-const flat = (items: MenuLink[] | undefined): NavItem[] => (items ?? []).map(({ label, href }) => ({ label, href }));
+const flat = (items: MenuLink[] | undefined): NavItem[] =>
+  (items ?? []).map(({ label, href }) => ({ label, href }));
 
 export function toSiteMenus(api: ApiMenus): SiteMenus {
   const primary = flat(api.header);
-  const selfCheck = primary.find((item) => item.href === "/quiz")?.href ?? "/quiz";
+  const selfCheck =
+    primary.find((item) => item.href === "/quiz")?.href ?? "/quiz";
 
   return {
     primary,
