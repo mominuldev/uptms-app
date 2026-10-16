@@ -38,7 +38,6 @@ export interface SiteSettings {
     /** "Mon–Fri · 8:00 AM–5:00 PM" (menu "Visit or call" card). */
     long: string;
   };
-  mainSiteUrl: string;
   social: SocialLink[];
   legal: {
     copyright: string;
@@ -96,7 +95,6 @@ export function toSiteSettings(api: ApiSettings): SiteSettings {
       postalCode: clinic.address.postal_code,
     },
     hours: { short: api.hours.short, long: api.hours.long },
-    mainSiteUrl: clinic.main_site_url ?? "/",
     social: clinic.social
       .filter((item): item is { network: SocialLink["network"]; url: string } =>
         SOCIAL.has(item.network as SocialLink["network"])

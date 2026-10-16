@@ -62,6 +62,8 @@ export interface ConsultationData extends Rail {
   headline: string;
   subheading: string;
   items: string[];
+  /** Missing on sections saved before the field existed: "Call the clinic". */
+  call_title?: string;
   email_title: string;
   email_note: string;
   form_title: string;
@@ -200,8 +202,9 @@ export interface FaqSources {
 
 export interface LocationData extends Rail {
   headline: string;
+  /** Missing on sections saved before the switch existed: treat as on. */
+  show_card?: boolean;
   eyebrow: string;
-  map_link_label: string;
 }
 
 export interface SplitCardsData extends Rail {

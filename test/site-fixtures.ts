@@ -9,7 +9,6 @@ export const settings: SiteSettings = {
   email: "contact@uptms.com",
   address: { street: "4007 Bridgeport Way W, Suite B", locality: "University Place", region: "WA", postalCode: "98466" },
   hours: { short: "Mon–Fri, 8am–5pm", long: "Mon–Fri · 8:00 AM–5:00 PM" },
-  mainSiteUrl: "https://uptms.com",
   social: [],
   legal: {
     copyright: "© 2026 University Place TMS Clinic & General Psychiatry",

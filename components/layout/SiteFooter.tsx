@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { SiteMenus, SiteSettings } from "@/lib/site";
 import { FooterLogo } from "./Logo";
 import { desktopGutter } from "./SiteHeader";
-import { ArrowIcon } from "@/components/ui/icons";
 
 const linkClasses = "rounded-sm text-white/86 transition-colors hover:text-white hover:underline underline-offset-4";
 
@@ -12,14 +11,6 @@ export function FooterBrand({ settings, compact = false }: { settings: SiteSetti
     <div className={`flex flex-col items-start ${compact ? "gap-3.5" : "gap-4"}`}>
       <FooterLogo clinicName={settings.clinicName} compact={compact} />
       <p className="max-w-[340px] text-body-s text-white/86">{settings.tagline}</p>
-      <a
-        href={settings.mainSiteUrl}
-        className={`rounded-sm font-display leading-[1.3] font-bold text-sky hover:text-white ${compact ? "text-[15px]" : "text-base"}`}
-      >
-        <span className="inline-flex items-center gap-1.5">
-          Visit our main clinic website <ArrowIcon className="size-[1.25em] shrink-0" />
-        </span>
-      </a>
     </div>
   );
 }
@@ -77,8 +68,8 @@ export function SiteFooter({ settings, menus }: { settings: SiteSettings; menus:
               Explore
             </h2>
             <ul className="flex flex-col gap-2.5 text-body-s">
-              {menus.footer.map((item) => (
-                <li key={item.href}>
+              {menus.footer.map((item, index) => (
+                <li key={`${item.href}-${index}`}>
                   <Link href={item.href} className={linkClasses}>
                     {item.label}
                   </Link>
