@@ -42,7 +42,7 @@ export function FooterVisit({ settings, compact = false }: { settings: SiteSetti
 export function FooterLegal({ settings, stacked = false }: { settings: SiteSettings; stacked?: boolean }) {
   return (
     <div
-      className={`flex border-t border-white text-caption text-white/72 ${
+      className={`flex border-t border-white/20 text-caption text-white/72 ${
         stacked ? "flex-col gap-2 pt-5" : "flex-wrap justify-between gap-x-10 gap-y-2 pt-6"
       }`}
     >
