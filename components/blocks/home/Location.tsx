@@ -26,7 +26,7 @@ export function LocationBlock({ data, number, anchor, ctx }: BlockProps<Location
 
         <div className="relative flex flex-col overflow-hidden rounded-sheet bg-sky-soft lg:block lg:h-[520px]">
           {showCard ? (
-            <div className="relative z-10 m-4 flex flex-col items-start gap-[18px] rounded-card bg-white p-6 shadow-[0_16px_40px_rgba(14,48,79,0.14)] md:m-6 md:p-8 lg:absolute lg:top-8 lg:left-8 lg:m-0 lg:w-[420px] lg:p-9">
+            <div className="relative z-10 m-4 flex flex-col items-start gap-[18px] rounded-card bg-white p-6 shadow-[0_16px_40px_rgba(14,48,79,0.14)] md:m-6 md:p-8 lg:absolute lg:top-4 lg:left-[15px] lg:m-0 lg:w-[420px] lg:p-9">
               {data.eyebrow ? <Eyebrow>{data.eyebrow}</Eyebrow> : null}
               <p className="font-serif text-heading-s text-ink">
                 {nameFirst}
@@ -61,7 +61,7 @@ export function LocationBlock({ data, number, anchor, ctx }: BlockProps<Location
               <CtaButton link={{ label: "Get Directions →", href: clinic.directions_url }} tokens={ctx.settings} />
             </div>
           ) : null}
-          <LocationMap query={`${clinic.name}, ${clinic.address.single_line}`} street={clinic.address.street} className="h-[320px] lg:absolute lg:inset-0 lg:h-auto" />
+          <LocationMap query={`${clinic.name}, ${clinic.address.single_line}`} street={clinic.address.street} geo={clinic.geo} className="h-[320px] lg:absolute lg:inset-0 lg:h-auto" />
         </div>
       </div>
     </TintPanel>
