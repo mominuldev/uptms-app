@@ -4,9 +4,12 @@ import type { ComponentProps, ReactNode } from "react";
 /**
  * Pill button (Figma "Button", node 25:14). Primary is the main CTA,
  * Secondary the outline on light, Light / OutlineLight sit on navy or royal
- * panels, Soft is tertiary. Pass `href` for a link that looks like a button.
+ * panels, Soft is tertiary. SoftOutline is Soft with the royal edge it needs
+ * when the pill sits on paper or sky-soft, where its fill alone is invisible
+ * (WCAG 1.4.11 wants 3:1 around a control). Pass `href` for a link that looks
+ * like a button.
  */
-export type ButtonVariant = "primary" | "secondary" | "light" | "outlineLight" | "soft";
+export type ButtonVariant = "primary" | "secondary" | "light" | "outlineLight" | "soft" | "softOutline";
 
 const base =
   "items-center justify-center gap-2 rounded-full text-center font-display text-base leading-[1.2] font-bold transition-colors duration-150 disabled:pointer-events-none disabled:opacity-60";
@@ -18,6 +21,7 @@ const variants: Record<ButtonVariant, string> = {
   light: "bg-white py-[17px] text-ink hover:bg-sky focus-visible:outline-white",
   outlineLight: "border-[1.5px] border-white py-[15.5px] text-white hover:bg-white hover:text-navy focus-visible:outline-white",
   soft: "bg-sky-soft py-[17px] text-royal hover:bg-sky",
+  softOutline: "border-[1.5px] border-royal bg-sky-soft py-[15.5px] text-royal hover:bg-sky",
 };
 
 /** `md` is the Figma pill (28px sides); `sm` tightens the sides for split bars on narrow phones. */

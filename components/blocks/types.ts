@@ -53,9 +53,17 @@ export interface CopyPanelData extends Rail {
   subheading: string;
   body: string;
   cta: Link;
+  /** The button opens the qualification form in a popup instead of following its link; missing on sections saved before the switch existed. */
+  cta_opens_form?: boolean;
+  form_title?: string;
   panel_title: string;
   panel_items: string[];
   panel_note: string;
+}
+export interface CopyPanelSources {
+  /** Only with `cta_opens_form`; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface ConsultationData extends Rail {
@@ -121,10 +129,16 @@ export interface TeamData extends Rail {
   headline: string;
   intro: string;
   primary: Link;
+  /** The founder card's button opens the qualification form in a popup instead of following its link; missing on sections saved before the switch existed. */
+  primary_opens_form?: boolean;
+  form_title?: string;
   link: Link;
 }
 export interface TeamSources {
   team?: TeamMember[];
+  /** Only with `primary_opens_form`; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface CtaBandData {
@@ -246,7 +260,14 @@ export interface QuizSources {
 
 export interface LinkCardsData extends Rail {
   headline: string;
-  cards: Repeat<{ title: string; body: string; link: Link }>;
+  /** `opens_form`: the card's button opens the qualification form in a popup instead of following its link; missing on cards saved before the switch existed. */
+  cards: Repeat<{ title: string; body: string; link: Link; opens_form?: boolean }>;
+  form_title?: string;
+}
+export interface LinkCardsSources {
+  /** Only with a card that opens the form; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface RichTextData extends Rail {

@@ -1,7 +1,7 @@
 import { Headline } from "@/components/content/Headline";
 import { Picture } from "@/components/content/Picture";
 import { acceptsRequests } from "@/components/forms/formSource";
-import { QualifyDialog } from "@/components/forms/QualifyDialog";
+import { QualifyButton } from "@/components/forms/QualifyButton";
 import { Container } from "@/components/ui/Container";
 import { fillTokens } from "@/lib/tokens";
 import type { TeamMember } from "@/lib/content";
@@ -48,18 +48,14 @@ export function HeroBlock({ data, sources, anchor, ctx }: BlockProps<HeroData, H
               <Actions className="w-full sm:w-auto">
                 {[
                   form ? (
-                    <QualifyDialog
+                    <QualifyButton
                       key="p"
-                      label={fillTokens(data.primary.label, tokens)}
-                      className="w-full sm:w-auto"
-                      title={data.form_title || "Find out if you qualify for TMS"}
-                      notice=""
-                      help=""
-                      submitLabel="Submit Inquiry"
-                      successBody={fillTokens("The team will reach out within one business day during office hours. If you need help sooner, call {phone}.", tokens)}
-                      phone={tokens.phone}
+                      label={data.primary.label}
+                      title={data.form_title}
                       form={form}
-                      insurers={(sources.insurers ?? []).map((insurer) => insurer.name)}
+                      insurers={sources.insurers ?? []}
+                      tokens={tokens}
+                      className="w-full sm:w-auto"
                     />
                   ) : (
                     <CtaButton key="p" link={data.primary} tokens={tokens} variant="light" className="w-full sm:w-auto" />
