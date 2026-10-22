@@ -1,13 +1,21 @@
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Headline } from "@/components/content/Headline";
+import { acceptsRequests } from "@/components/forms/formSource";
+import { QualifyButton } from "@/components/forms/QualifyButton";
 import { resolveLink } from "@/lib/tokens";
-import type { BlockProps, LinkCardsData } from "../types";
+import type { BlockProps, LinkCardsData, LinkCardsSources } from "../types";
 import { Rail, sectionHeading } from "./parts";
 
-/** Quiz 02 "Keep exploring" (Figma 34:514): numbered cards pointing elsewhere; the middle one is sky. */
-export function LinkCards({ data, number, anchor, ctx }: BlockProps<LinkCardsData>) {
+/**
+ * Quiz 02 "Keep exploring" (Figma 34:514): numbered cards pointing elsewhere;
+ * the middle one is sky. A card's button can open the qualification form in a
+ * popup instead, like the Home hero's.
+ */
+export function LinkCards({ data, sources, number, anchor, ctx }: BlockProps<LinkCardsData, LinkCardsSources>) {
   const headingId = anchor && data.headline ? `${anchor}-title` : undefined;
+  // Without the inbox every card falls back to its link.
+  const form = acceptsRequests(sources.form) ? sources.form : null;
 
   return (
     <Container as="section" id={anchor ?? undefined} aria-labelledby={headingId} className="scroll-mt-28 py-12 md:py-16 lg:py-24">
@@ -27,11 +35,14 @@ export function LinkCards({ data, number, anchor, ctx }: BlockProps<LinkCardsDat
                 <span className="font-display text-eyebrow font-bold tracking-[0.1em] text-royal">{String(index + 1).padStart(2, "0")}</span>
                 <h3 className="font-serif text-[28px] leading-[1.15] tracking-[-0.015em] md:text-[32px]">{card.title}</h3>
                 <p className="text-body-m text-ink-soft">{card.body}</p>
-                {link && (
-                  <Button href={link.href} variant="soft" className="mt-auto">
-                    {link.label}
-                  </Button>
-                )}
+                {link &&
+                  (card.opens_form && form ? (
+                    <QualifyButton label={link.label} title={data.form_title ?? ""} form={form} insurers={sources.insurers ?? []} tokens={ctx.settings} variant="softOutline" className="mt-auto" />
+                  ) : (
+                    <Button href={link.href} variant="softOutline" className="mt-auto">
+                      {link.label}
+                    </Button>
+                  ))}
               </li>
             );
           })}
