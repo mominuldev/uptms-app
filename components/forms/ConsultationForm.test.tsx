@@ -76,6 +76,7 @@ describe("ConsultationForm", () => {
 
     expect(await screen.findByText("Thank you — your request is in.")).toBeTruthy();
     expect(screen.getByText("CR-2026-0042")).toBeTruthy();
+    expect(screen.getByText("A confirmation with this reference is on its way to your email.")).toBeTruthy();
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({ first_name: "Sam", last_name: "Lee", email: "sam@example.com", insurance: "Premera Blue Cross", prior_treatment: "both", contact_method: "text", topic: "insurance", website: "" }),
     );
