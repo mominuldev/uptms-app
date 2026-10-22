@@ -168,10 +168,14 @@ export function ConsultationForm({ title, notice, help, submitLabel, successBody
           </span>
           <p className="font-serif text-[26px] leading-[1.2] tracking-[-0.01em] text-ink">Thank you — your request is in.</p>
           <p className="text-body-m text-ink">{successBody}</p>
+          {/* A honeypot submission answers without a reference, and nothing was stored or emailed: then neither line shows. */}
           {status.reference && (
-            <p className="text-body-s text-ink-soft">
-              Your reference: <span className="font-bold text-ink">{status.reference}</span>
-            </p>
+            <>
+              <p className="text-body-s text-ink-soft">
+                Your reference: <span className="font-bold text-ink">{status.reference}</span>
+              </p>
+              <p className="text-body-s text-ink-soft">A confirmation with this reference is on its way to your email.</p>
+            </>
           )}
           <button type="button" onClick={() => setStatus({ kind: "idle" })} className="text-body-s font-bold text-royal underline-offset-4 hover:underline">
             Send another request
