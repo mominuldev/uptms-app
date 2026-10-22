@@ -8,6 +8,11 @@ describe("isActivePath", () => {
     expect(isActivePath("/contact", "/")).toBe(false);
   });
 
+  it("matches Home on the prerendered \"/index\" the home route reports", () => {
+    expect(isActivePath("/index", "/")).toBe(true);
+    expect(isActivePath("/index", "/tms")).toBe(false);
+  });
+
   it("matches a section and the pages below it", () => {
     expect(isActivePath("/tms", "/tms")).toBe(true);
     expect(isActivePath("/tms/", "/tms")).toBe(true);
