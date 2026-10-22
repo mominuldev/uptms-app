@@ -53,9 +53,17 @@ export interface CopyPanelData extends Rail {
   subheading: string;
   body: string;
   cta: Link;
+  /** The button opens the qualification form in a popup instead of following its link; missing on sections saved before the switch existed. */
+  cta_opens_form?: boolean;
+  form_title?: string;
   panel_title: string;
   panel_items: string[];
   panel_note: string;
+}
+export interface CopyPanelSources {
+  /** Only with `cta_opens_form`; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface ConsultationData extends Rail {

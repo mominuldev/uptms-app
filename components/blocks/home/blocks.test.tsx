@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiSettings, TeamMember } from "@/lib/content";
 import { settings } from "@/test/site-fixtures";
-import type { BlockContext, FaqData, HeroData } from "../types";
+import type { BlockContext, CopyPanelData, FaqData, HeroData } from "../types";
+import { CopyPanelBlock } from "./CopyPanel";
 import { FaqBlock } from "./Faq";
 import { HeroBlock } from "./Hero";
 
@@ -36,6 +37,15 @@ const hero: HeroData = {
   show_trust_points: true,
 };
 
+/** The consultation inbox taking requests, as the API sends it to a block that opens the popup. */
+const form = {
+  accepting: true,
+  topics: [],
+  best_times: [],
+  prior_treatments: [{ value: "both", label: "Yes, both therapy and antidepressants" }],
+  contact_methods: [{ value: "phone", label: "Phone call" }],
+};
+
 const founder = { id: 1, name: "Ayub Mwaura", credentials: "MSN, PMHNP-BC", role_title: "Founder & psychiatric nurse practitioner", initials: "AM", photo: null } as TeamMember;
 
 describe("HeroBlock", () => {
@@ -65,13 +75,6 @@ describe("HeroBlock", () => {
     expect(screen.queryByRole("link", { name: /Call/ })).toBeNull();
   });
 
-  const form = {
-    accepting: true,
-    topics: [],
-    best_times: [],
-    prior_treatments: [{ value: "both", label: "Yes, both therapy and antidepressants" }],
-    contact_methods: [{ value: "phone", label: "Phone call" }],
-  };
   const qualify = { ...hero, primary: link("Find Out If You Qualify", "/contact#consultation-form"), primary_opens_form: true, form_title: "Find out if you qualify for TMS" };
 
   it("opens the qualification form in a popup from its button", async () => {
@@ -100,6 +103,46 @@ describe("HeroBlock", () => {
     render(<HeroBlock data={qualify} sources={{ form: null }} number={null} anchor={null} ctx={ctx} />);
 
     expect(screen.getByRole("link", { name: "Find Out If You Qualify" }).getAttribute("href")).toBe("/contact#consultation-form");
+  });
+});
+
+describe("CopyPanelBlock", () => {
+  const data: CopyPanelData = {
+    rail: "You don’t have to figure this out alone",
+    anchor: "why-tms",
+    headline: "Still searching for relief? *Let’s talk about your options.*",
+    subheading: "",
+    body: "",
+    cta: link("Talk with our team for free →", "/contact"),
+    cta_opens_form: true,
+    form_title: "Find out if you qualify for TMS",
+    panel_title: "",
+    panel_items: [],
+    panel_note: "",
+  };
+
+  it("opens the same qualification popup as the hero from its button", async () => {
+    HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    });
+    const user = userEvent.setup();
+    render(<CopyPanelBlock data={data} sources={{ form, insurers: [{ id: 1, name: "Premera Blue Cross", logo: null, url: null }] }} number="01" anchor="why-tms" ctx={ctx} />);
+
+    await user.click(screen.getByRole("button", { name: "Talk with our team for free" }));
+
+    expect(screen.getByRole("dialog", { name: "Find out if you qualify for TMS" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Premera Blue Cross" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Submit Inquiry" })).toBeTruthy();
+  });
+
+  it("falls back to the button's link when online requests are off", () => {
+    render(<CopyPanelBlock data={data} sources={{ form: null }} number="01" anchor="why-tms" ctx={ctx} />);
+
+    expect(screen.getByRole("link", { name: "Talk with our team for free" }).getAttribute("href")).toBe("/contact");
   });
 });
 
