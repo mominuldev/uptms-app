@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { BackToTop } from "@/components/layout/BackToTop";
 import { MobileCtaBar } from "@/components/layout/MobileCtaBar";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteFooterCompact } from "@/components/layout/SiteFooterCompact";
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SiteFooter settings={settings} menus={menus} />
         <SiteFooterCompact settings={settings} menus={menus} />
         <MobileCtaBar settings={settings} menus={menus} />
+        <BackToTop />
       </body>
     </html>
   );
