@@ -129,10 +129,16 @@ export interface TeamData extends Rail {
   headline: string;
   intro: string;
   primary: Link;
+  /** The founder card's button opens the qualification form in a popup instead of following its link; missing on sections saved before the switch existed. */
+  primary_opens_form?: boolean;
+  form_title?: string;
   link: Link;
 }
 export interface TeamSources {
   team?: TeamMember[];
+  /** Only with `primary_opens_form`; missing or null when the consultation inbox is off. */
+  form?: ConsultationFormSource | null;
+  insurers?: InsurancePartner[];
 }
 
 export interface CtaBandData {

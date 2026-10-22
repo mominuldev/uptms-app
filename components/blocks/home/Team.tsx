@@ -1,5 +1,7 @@
 import { Markdown } from "@/components/content/Markdown";
 import { Picture } from "@/components/content/Picture";
+import { acceptsRequests } from "@/components/forms/formSource";
+import { QualifyButton } from "@/components/forms/QualifyButton";
 import type { TeamMember } from "@/lib/content";
 import type { BlockProps, TeamData, TeamSources } from "../types";
 import { CtaButton, Eyebrow, SectionHead, TextLink, TintPanel } from "./parts";
@@ -7,13 +9,16 @@ import { CtaButton, Eyebrow, SectionHead, TextLink, TintPanel } from "./parts";
 /**
  * 04 · Care team (Figma 28:121): the founder card (portrait, role, name,
  * credentials, bio, highlight tags, button) and a card for everyone else
- * shown on the page, then a link to the main site.
+ * shown on the page, then a link to the main site. Like the Home hero's, the
+ * card's button can open the qualification form in a popup.
  */
 export function TeamBlock({ data, sources, number, anchor, ctx }: BlockProps<TeamData, TeamSources>) {
   const team = sources.team ?? [];
   const founder = team.find((member) => member.is_founder) ?? team[0];
   const others = team.filter((member) => member !== founder);
   const headingId = `${anchor ?? "team"}-title`;
+  // Without the inbox (or without a label) the button falls back to its link.
+  const form = data.primary_opens_form && data.primary.label !== "" && acceptsRequests(sources.form) ? sources.form : null;
 
   return (
     <TintPanel tone="skySoft" id={anchor} labelledBy={headingId} block="team">
@@ -43,7 +48,19 @@ export function TeamBlock({ data, sources, number, anchor, ctx }: BlockProps<Tea
                   ))}
                 </ul>
               ) : null}
-              <CtaButton link={data.primary} tokens={ctx.settings} className="w-full sm:w-auto" />
+              {form ? (
+                <QualifyButton
+                  label={data.primary.label}
+                  title={data.form_title ?? ""}
+                  form={form}
+                  insurers={sources.insurers ?? []}
+                  tokens={ctx.settings}
+                  variant="primary"
+                  className="w-full sm:w-auto"
+                />
+              ) : (
+                <CtaButton link={data.primary} tokens={ctx.settings} className="w-full sm:w-auto" />
+              )}
             </div>
           </article>
         ) : null}

@@ -4,10 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ApiSettings, TeamMember } from "@/lib/content";
 import { settings } from "@/test/site-fixtures";
-import type { BlockContext, CopyPanelData, FaqData, HeroData } from "../types";
+import type { BlockContext, CopyPanelData, FaqData, HeroData, TeamData } from "../types";
 import { CopyPanelBlock } from "./CopyPanel";
 import { FaqBlock } from "./Faq";
 import { HeroBlock } from "./Hero";
+import { TeamBlock } from "./Team";
 
 vi.mock("@/lib/consultation", () => ({ submitConsultation: vi.fn() }));
 
@@ -46,6 +47,17 @@ const form = {
   contact_methods: [{ value: "phone", label: "Phone call" }],
 };
 
+/** jsdom has no modal <dialog>: open and close it by hand. */
+function mockDialog() {
+  HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
+    this.setAttribute("open", "");
+  });
+  HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
+    this.removeAttribute("open");
+    this.dispatchEvent(new Event("close"));
+  });
+}
+
 const founder = { id: 1, name: "Ayub Mwaura", credentials: "MSN, PMHNP-BC", role_title: "Founder & psychiatric nurse practitioner", initials: "AM", photo: null } as TeamMember;
 
 describe("HeroBlock", () => {
@@ -78,13 +90,7 @@ describe("HeroBlock", () => {
   const qualify = { ...hero, primary: link("Find Out If You Qualify", "/contact#consultation-form"), primary_opens_form: true, form_title: "Find out if you qualify for TMS" };
 
   it("opens the qualification form in a popup from its button", async () => {
-    HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
-      this.setAttribute("open", "");
-    });
-    HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
-      this.removeAttribute("open");
-      this.dispatchEvent(new Event("close"));
-    });
+    mockDialog();
     const user = userEvent.setup();
     render(<HeroBlock data={qualify} sources={{ form, insurers: [{ id: 1, name: "Premera Blue Cross", logo: null, url: null }] }} number={null} anchor={null} ctx={ctx} />);
 
@@ -122,13 +128,7 @@ describe("CopyPanelBlock", () => {
   };
 
   it("opens the same qualification popup as the hero from its button", async () => {
-    HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) {
-      this.setAttribute("open", "");
-    });
-    HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) {
-      this.removeAttribute("open");
-      this.dispatchEvent(new Event("close"));
-    });
+    mockDialog();
     const user = userEvent.setup();
     render(<CopyPanelBlock data={data} sources={{ form, insurers: [{ id: 1, name: "Premera Blue Cross", logo: null, url: null }] }} number="01" anchor="why-tms" ctx={ctx} />);
 
@@ -143,6 +143,39 @@ describe("CopyPanelBlock", () => {
     render(<CopyPanelBlock data={data} sources={{ form: null }} number="01" anchor="why-tms" ctx={ctx} />);
 
     expect(screen.getByRole("link", { name: "Talk with our team for free" }).getAttribute("href")).toBe("/contact");
+  });
+});
+
+describe("TeamBlock", () => {
+  const data: TeamData = {
+    rail: "Meet your care team",
+    anchor: "care-team",
+    headline: "Real people. *A personal approach to care.*",
+    intro: "",
+    primary: link("Talk With Our Care Team", "/contact"),
+    primary_opens_form: true,
+    form_title: "Find out if you qualify for TMS",
+    link: link("", ""),
+  };
+
+  const member = { ...founder, bio: "", highlights: [], is_founder: true } as TeamMember;
+
+  it("opens the same qualification popup as the hero from the founder card's button", async () => {
+    mockDialog();
+    const user = userEvent.setup();
+    render(<TeamBlock data={data} sources={{ team: [member], form, insurers: [{ id: 1, name: "Premera Blue Cross", logo: null, url: null }] }} number="04" anchor="care-team" ctx={ctx} />);
+
+    await user.click(screen.getByRole("button", { name: "Talk With Our Care Team" }));
+
+    expect(screen.getByRole("dialog", { name: "Find out if you qualify for TMS" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Premera Blue Cross" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Submit Inquiry" })).toBeTruthy();
+  });
+
+  it("falls back to the button's link when online requests are off", () => {
+    render(<TeamBlock data={data} sources={{ team: [member], form: null }} number="04" anchor="care-team" ctx={ctx} />);
+
+    expect(screen.getByRole("link", { name: "Talk With Our Care Team" }).getAttribute("href")).toBe("/contact");
   });
 });
 
