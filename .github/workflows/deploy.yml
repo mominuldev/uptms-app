@@ -64,7 +64,7 @@ jobs:
             sleep 1
             code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/ || true)
             [ "$code" = "200" ] && break
-            grep -qE 'Error' start.log && break
+            grep -qE '^(Error|.*Error:)' start.log && break
           done
           pkill -f 'node server.js' || true
           if [ "${code:-}" != "200" ]; then
@@ -93,5 +93,5 @@ jobs:
             echo "$site/ -> ${code:-no response}, serving ${live:-no x-commit header yet}; waiting"
             sleep 10
           done
-          echo "::error::After 10 minutes the site still serves ${live:-an unknown commit}, not $want. hPanel's build most likely failed — check its build log in hPanel."
+          echo "::error::After 10 minutes the site still serves ${live:-an unknown commit}, not $want. hPanel's build most likely failed — run the 'Diagnose the Hostinger host' workflow to read its log."
           exit 1
