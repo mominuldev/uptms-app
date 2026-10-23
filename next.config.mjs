@@ -44,6 +44,8 @@ const nextConfig = {
   env: { API_URL: process.env.API_URL ?? "" },
   cacheComponents: true,
   partialPrefetching: true,
+  // Let `next dev` tell an agent to pick up security releases on its own.
+  experimental: { agentUpgrade: "security" },
   async headers() {
     return [{ source: "/:path*", headers: [{ key: "x-commit", value: commit }] }];
   },
