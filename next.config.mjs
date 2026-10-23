@@ -4,9 +4,9 @@ import { execSync } from "node:child_process";
 // Plain JavaScript on purpose. Production is built by Hostinger's hPanel
 // Node.js deployment, which runs `next build` from the repository and
 // publishes `.next/standalone`. Given a next.config.ts it swaps in a stock
-// standalone config of its own, which would drop cacheComponents and the
-// Tailwind rule below. This file it reads as-is, which is why `output` is
-// set here rather than left to the host.
+// standalone config of its own, which would drop cacheComponents. This file
+// it reads as-is, which is why `output` is set here rather than left to the
+// host. Tailwind is wired up in postcss.config.mjs.
 
 /**
  * The commit this build came from, for the `x-commit` response header.
@@ -46,14 +46,6 @@ const nextConfig = {
   partialPrefetching: true,
   async headers() {
     return [{ source: "/:path*", headers: [{ key: "x-commit", value: commit }] }];
-  },
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
   },
 };
 
