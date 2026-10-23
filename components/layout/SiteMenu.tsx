@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { ArrowIcon, CloseIcon, DotIcon, MenuIcon } from "@/components/ui/icons";
 import { isActivePath } from "@/lib/navigation";
 import type { NavItem, SiteMenus, SiteSettings } from "@/lib/site";
-import { CompactBar, CompactTopbar } from "./CompactBars";
+import { CompactBar } from "./CompactBars";
 
 const toggleClasses =
   "flex size-12 shrink-0 items-center justify-center rounded-full border-[1.5px] border-line text-ink transition-colors hover:bg-sky-soft";
@@ -146,7 +146,6 @@ export function SiteMenu({ settings, menus }: { settings: SiteSettings; menus: S
           onClick={onSheetClick}
           className="relative flex h-dvh flex-col overflow-y-auto overscroll-contain bg-white md:h-auto md:max-h-dvh md:rounded-b-panel md:shadow-[0_16px_40px_rgba(14,48,78,0.18)]"
         >
-          <CompactTopbar settings={settings} centred />
           <CompactBar
             settings={settings}
             actions={

@@ -5,7 +5,7 @@ import { fillHref, fillTokens, isExternal } from "@/lib/tokens";
 /**
  * Clinic settings → Announcement bar (uptms-ad admin preview): a short notice
  * above the header on every page, at every width. Royal so it reads apart
- * from the navy utility bar beneath it. Laravel only allows site paths,
+ * from the white header beneath it. Laravel only allows site paths,
  * https:, tel: and mailto: links; `{phone}` and `tel:clinic` tokens resolve here.
  */
 export function AnnouncementBar({ settings }: { settings: SiteSettings }) {

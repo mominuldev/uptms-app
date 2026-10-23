@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Button } from "@/components/ui/Button";
 import type { SiteMenus, SiteSettings } from "@/lib/site";
-import { CompactBar, CompactTopbar } from "./CompactBars";
+import { CompactBar } from "./CompactBars";
 import { MenuToggleFallback, SiteMenu } from "./SiteMenu";
 
 /**
@@ -12,7 +12,6 @@ import { MenuToggleFallback, SiteMenu } from "./SiteMenu";
 export function SiteHeaderCompact({ settings, menus }: { settings: SiteSettings; menus: SiteMenus }) {
   return (
     <header className="lg:hidden">
-      <CompactTopbar settings={settings} />
       <CompactBar
         settings={settings}
         actions={
