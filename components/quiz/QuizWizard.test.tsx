@@ -33,7 +33,10 @@ function setup() {
 }
 
 const heading = () => screen.getAllByRole("heading")[0]!.textContent ?? "";
-const next = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole("button", { name: /^(Next|See (my )?results|Finish)/ }));
+/** `findBy`: the button reads "Sending…" until the transition that posted the answers
+ *  settles, which can outlast the card it has already rendered. */
+const next = async (user: ReturnType<typeof userEvent.setup>) =>
+  user.click(await screen.findByRole("button", { name: /^(Next|See (my )?results|Finish)/ }));
 
 /** Picks a choice and moves on at once (the auto-advance timer is cancelled by Next). */
 async function pick(user: ReturnType<typeof userEvent.setup>, label: string) {
