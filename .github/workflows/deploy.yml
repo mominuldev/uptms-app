@@ -93,12 +93,15 @@ jobs:
             echo "$site/ -> ${code:-no response}, serving ${live:-no x-commit header yet}; waiting"
             sleep 10
           done
-          # Which of the two failures it is matters, and the header says so.
-          # A missing x-commit means the Next app is not what answers there at
-          # all — hPanel has never published a version, so the domain is still
-          # on its placeholder page. An x-commit naming an older commit means
+          # Which failure it is matters, and the header says so. A missing
+          # x-commit means the Next app is not what answers there at all —
+          # hPanel has never published a version, so the domain is still on its
+          # placeholder page. "unknown" means the app serves but its build could
+          # not name its own commit. An x-commit naming an older commit means
           # hPanel published before and this build did not replace it.
-          if [ -z "${live:-}" ]; then
+          if [ "${live:-}" = "unknown" ]; then
+            echo "::error::$site serves the Next app but reports x-commit: unknown, so the published build could not work out which commit it came from — see commitSha() in next.config.mjs. The publish itself may have succeeded; this check cannot tell."
+          elif [ -z "${live:-}" ]; then
             echo "::error::After 10 minutes $site still sends no x-commit header, so the Next app is not what serves it — hPanel has never published a version (its build fails, or the deployment is not pulling at all). Run the 'Diagnose the Hostinger host' workflow to read its log."
           else
             echo "::error::After 10 minutes $site still serves commit $live, not $want — hPanel's build most likely failed and left the previous version serving. Run the 'Diagnose the Hostinger host' workflow to read its log."

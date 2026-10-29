@@ -1,5 +1,7 @@
 // @ts-check
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 // Plain JavaScript on purpose. Production is built by Hostinger's hPanel
 // Node.js deployment, which runs `next build` from the repository and
@@ -17,7 +19,40 @@ function commitSha() {
   try {
     return execSync("git rev-parse HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
   } catch {
-    return process.env.GITHUB_SHA ?? "unknown";
+    // hPanel's Node build environment has no `git` on its PATH, so read the
+    // ref ourselves rather than publish a build that cannot name its commit.
+    return shaFromGitDir(process.cwd()) ?? process.env.COMMIT_SHA ?? process.env.GITHUB_SHA ?? "unknown";
+  }
+}
+
+/**
+ * HEAD read straight from the git directory, walking up from `start` so it
+ * works whether `next build` runs at the repository root or below it.
+ * Returns undefined when there is no readable .git to be found.
+ */
+function shaFromGitDir(start) {
+  for (let dir = resolve(start); ; ) {
+    const gitDir = join(dir, ".git");
+    try {
+      const head = readFileSync(join(gitDir, "HEAD"), "utf8").trim();
+      // A detached HEAD holds the sha itself; a normal one points at a ref.
+      if (!head.startsWith("ref:")) return head;
+      const ref = head.slice(4).trim();
+      try {
+        return readFileSync(join(gitDir, ref), "utf8").trim();
+      } catch {
+        // A fresh clone keeps its refs packed instead of as loose files.
+        const line = readFileSync(join(gitDir, "packed-refs"), "utf8")
+          .split("\n")
+          .find((entry) => entry.endsWith(` ${ref}`));
+        if (line) return line.split(" ")[0];
+      }
+    } catch {
+      // Nothing readable here; the parent directory may still hold the repo.
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
   }
 }
 
