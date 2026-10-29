@@ -30,6 +30,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        # Full history: the gate below asks whether the commit the live
+        # site reports is one of ours at all, which a shallow clone cannot say.
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -78,32 +82,44 @@ jobs:
       # live site to report this commit rather than trusting a 200 from
       # whatever version is serving.
       - name: Wait for hPanel to publish this commit
+        env:
+          SITE: ${{ vars.SITE_URL }}
+          WANT: ${{ github.sha }}
+          # Hostinger's CDN (server: hcdn) answers 403 to curl's default
+          # User-Agent, so the poll has to look like a browser or every other
+          # sample is a false negative that says nothing about the deploy.
+          UA: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
         run: |
-          site="${{ vars.SITE_URL }}"
-          want="${{ github.sha }}"
+          # What the site last answered when it answered properly. Keeping this
+          # out of the loop variable matters: a 403 from the CDN would otherwise
+          # be the sample the diagnosis below is written from.
+          live=""
+          served=0
           for _ in $(seq 1 60); do
-            headers=$(curl -sS -D - -o /dev/null --max-time 30 \
-              -H 'Cache-Control: no-cache' "$site/?deploy=${want:0:12}" || true)
+            headers=$(curl -sS -D - -o /dev/null --max-time 30 -A "$UA" \
+              -H 'Cache-Control: no-cache' "$SITE/?deploy=${WANT:0:12}" || true)
             code=$(printf '%s' "$headers" | head -1 | grep -oE '[0-9]{3}' | head -1)
-            live=$(printf '%s' "$headers" | tr -d '\r' | grep -i '^x-commit:' | awk '{print $2}')
-            if [ "$code" = "200" ] && [ "$live" = "$want" ]; then
-              echo "$site/ -> 200, serving commit $want"
-              exit 0
+            commit=$(printf '%s' "$headers" | tr -d '\r' | grep -i '^x-commit:' | awk '{print $2}')
+            if [ "$code" = "200" ] && [ -n "$commit" ]; then
+              served=1
+              live=$commit
+              if [ "$live" = "$WANT" ]; then
+                echo "$SITE/ -> 200, serving commit $WANT"
+                exit 0
+              fi
             fi
-            echo "$site/ -> ${code:-no response}, serving ${live:-no x-commit header yet}; waiting"
+            echo "$SITE/ -> ${code:-no response}, serving ${commit:-no x-commit header}; waiting"
             sleep 10
           done
-          # Which failure it is matters, and the header says so. A missing
-          # x-commit means the Next app is not what answers there at all —
-          # hPanel has never published a version, so the domain is still on its
-          # placeholder page. "unknown" means the app serves but its build could
-          # not name its own commit. An x-commit naming an older commit means
-          # hPanel published before and this build did not replace it.
-          if [ "${live:-}" = "unknown" ]; then
-            echo "::error::$site serves the Next app but reports x-commit: unknown, so the published build could not work out which commit it came from — see commitSha() in next.config.mjs. The publish itself may have succeeded; this check cannot tell."
-          elif [ -z "${live:-}" ]; then
-            echo "::error::After 10 minutes $site still sends no x-commit header, so the Next app is not what serves it — hPanel has never published a version (its build fails, or the deployment is not pulling at all). Run the 'Diagnose the Hostinger host' workflow to read its log."
+
+          # Which failure it is matters, and the header says so.
+          if [ "$served" = "0" ]; then
+            echo "::error::After 10 minutes $SITE never answered 200 with an x-commit header, so the Next app is not what serves it — hPanel has never published a version (its build fails, or the deployment is not pulling at all). Run the 'Diagnose the Hostinger host' workflow to read its log."
+          elif [ "$live" = "unknown" ]; then
+            echo "::error::$SITE serves the Next app but reports x-commit: unknown, so the published build could not work out which commit it came from — see commitSha() in next.config.mjs. Either the build predates that fallback, or hPanel builds from a staged copy with no .git. The publish itself may have succeeded; this check cannot tell."
+          elif ! git cat-file -e "$live^{commit}" 2>/dev/null; then
+            echo "::error::$SITE serves commit $live, which does not exist in this repository — hPanel's Node.js deployment is pulling a different repository or branch. Point it at ${{ github.repository }} (hPanel -> Node.js app -> Git source), then redeploy."
           else
-            echo "::error::After 10 minutes $site still serves commit $live, not $want — hPanel's build most likely failed and left the previous version serving. Run the 'Diagnose the Hostinger host' workflow to read its log."
+            echo "::error::After 10 minutes $SITE still serves commit $live, not $WANT — hPanel's build most likely failed and left the previous version serving. Run the 'Diagnose the Hostinger host' workflow to read its log."
           fi
           exit 1

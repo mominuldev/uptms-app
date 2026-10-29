@@ -100,7 +100,12 @@ jobs:
           if [ -d "$hb" ]; then
             printf 'current -> '; readlink -f "$hb/current" 2>/dev/null || echo "(no current symlink)"
             echo "== versions"; ls -la --time-style=full-iso "$hb/versions" 2>/dev/null
-            echo "== source repository"; git -C "$hb/source/repository" log -1 --format='%h %ci %s' 2>/dev/null || ls -la "$hb/source" 2>/dev/null
+            # Which repository hPanel actually pulls. It is configured in
+            # hPanel, not here, so a deploy can go green upstream while the
+            # host rebuilds something else entirely.
+            echo "== source repository"
+            git -C "$hb/source/repository" remote -v 2>/dev/null || true
+            git -C "$hb/source/repository" log -1 --format='%h %ci %s' 2>/dev/null || ls -la "$hb/source" 2>/dev/null
             echo "== config env keys (names only)"; sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*)=.*/\1/p' "$hb/config/.env" 2>/dev/null
             repo="$hb/source/repository"
             echo "== files hPanel adds on top of the repo (untracked/ignored at the root)"
