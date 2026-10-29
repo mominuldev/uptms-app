@@ -30,7 +30,8 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
         run: |
           remote_args=$(printf '%q %q' "$APP_PATH" "$SITE_URL")
-          ssh -i ~/.ssh/id_ed25519 -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
+          ssh -o BatchMode=yes -o IdentitiesOnly=yes \
+            -i ~/.ssh/id_ed25519 -p "${{ secrets.HOSTINGER_SSH_PORT }}" \
             "${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }}" \
             "bash -s -- $remote_args" <<'REMOTE'
           app_path=$1
