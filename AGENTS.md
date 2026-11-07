@@ -16,7 +16,7 @@ Design (source of truth): https://www.figma.com/design/ij7CwMEI0miNBTQn0lF0AE/UP
 
 - Server Components by default; `'use client'` only for real interactivity (menu, quiz, form).
 - Never call the API from the browser; `API_URL` is server-only. Cached reads use `'use cache'` + `cacheLife` + `cacheTag`; uncached reads go inside `<Suspense>`.
-- No business rules here: Laravel validates and decides. No analytics or third-party scripts on the contact form or quiz pages (patient privacy); the only exception is Cloudflare Turnstile on the Contact form, when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set.
+- No business rules here: Laravel validates and decides. Third-party scripts are limited to Cloudflare Turnstile on the Contact form (when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set) and the one Google Tag Manager container the admin switches on (`components/layout/TagManager.tsx`, from `tag_manager` on `GET /public/seo`). Never load a tag on the contact form or the quiz (patient privacy): `tag_manager.exclude_paths` names those paths, and `TagManager` both skips the container there and sends links into them through a document load, so a container loaded earlier cannot follow the visitor onto the form.
 - No HTML from the API is ever injected: rich text is a small Markdown dialect parsed into React elements (`components/content/Markdown.tsx`); headlines mark accents with *asterisks*.
 - Pages are data: every CMS section is a block component registered in `components/blocks/registry-*.ts`, typed in `components/blocks/types.ts` to match uptms-ad `packages/pages/src/Blocks/BlockTypes.php`. A new block needs both.
 - Content tokens `{phone}`, `{hours}`, `{email}`, `tel:clinic` are filled from Clinic settings (`lib/tokens.ts`).

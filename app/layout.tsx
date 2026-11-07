@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { BackToTop } from "@/components/layout/BackToTop";
@@ -6,6 +7,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteFooterCompact } from "@/components/layout/SiteFooterCompact";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteHeaderCompact } from "@/components/layout/SiteHeaderCompact";
+import { TagManager } from "@/components/layout/TagManager";
 import { getSeoSite } from "@/lib/cms";
 import { indexingAllowed } from "@/lib/seo";
 import { getSiteMenus, getSiteSettings } from "@/lib/site";
@@ -41,11 +43,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [settings, menus] = await Promise.all([getSiteSettings(), getSiteMenus()]);
+  const [settings, menus, seo] = await Promise.all([getSiteSettings(), getSiteMenus(), getSeoSite()]);
 
   return (
     <html lang="en" className={`${fontVariables} h-full`}>
       <body className="flex min-h-full flex-col">
+        {/* Nothing unless an admin switched analytics on, and never on the paths they keep tag-free. */}
+        <Suspense fallback={null}>
+          <TagManager container={seo?.tag_manager ?? null} />
+        </Suspense>
         <a
           href="#main"
           className="sr-only rounded-full bg-royal px-5 py-3 font-display font-bold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60]"

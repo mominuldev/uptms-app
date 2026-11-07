@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { Seo } from "./content";
-import { jsonLd, robotsTxt, toMetadata, toSitemap } from "./seo";
+import { jsonLd, robotsTxt, tagsExcluded, toMetadata, toSitemap } from "./seo";
 
 const seo: Seo = {
   title: "Deep TMS Therapy in University Place, WA | UPTMS",
@@ -69,5 +69,21 @@ describe("robotsTxt", () => {
   it("leaves a Sitemap line staff wrote themselves alone", () => {
     const text = "User-agent: *\nAllow: /\nsitemap: https://uptms.com/custom.xml";
     expect(robotsTxt(text, "https://uptms.com")).toBe(`${text}\n`);
+  });
+});
+
+describe("tagsExcluded", () => {
+  const paths = ["/contact", "/quiz"];
+
+  it.each(["/contact", "/quiz", "/contact/thanks", "/contact?utm_source=ads", "/contact/"])("keeps tags off %s", (pathname) => {
+    expect(tagsExcluded(pathname, paths)).toBe(true);
+  });
+
+  it.each(["/", "/index", "/tms", "/conditions/ocd", "/contacts", "/quizzes", null, undefined])("allows tags on %s", (pathname) => {
+    expect(tagsExcluded(pathname, paths)).toBe(false);
+  });
+
+  it("allows tags everywhere when the clinic excluded nothing", () => {
+    expect(tagsExcluded("/contact", [])).toBe(false);
   });
 });

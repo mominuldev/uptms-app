@@ -1,5 +1,6 @@
 import type { Metadata, MetadataRoute } from "next";
 import type { Seo, SitemapEntry } from "./content";
+import { isActivePath } from "./navigation";
 
 /**
  * Indexing is switched on at launch (ALLOW_INDEXING=true). Until then every
@@ -8,6 +9,16 @@ import type { Seo, SitemapEntry } from "./content";
  */
 export function indexingAllowed(): boolean {
   return process.env.ALLOW_INDEXING === "true";
+}
+
+/**
+ * True when this path is one the clinic keeps tag-free (`tag_manager.exclude_paths`:
+ * the consultation form and the self-check), or anything below one. A tag firing
+ * there would send what a patient typed or answered to Google, which HHS
+ * online-tracking guidance treats as disclosing health information.
+ */
+export function tagsExcluded(pathname: string | null | undefined, excludePaths: string[]): boolean {
+  return excludePaths.some((path) => isActivePath(pathname, path));
 }
 
 /** This site's public origin, without a trailing slash. */

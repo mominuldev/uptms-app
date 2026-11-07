@@ -240,6 +240,17 @@ export interface SeoSite {
   separator: string;
   x_handle: string | null;
   verification: { google?: string; bing?: string };
+  /** null while analytics are off in the admin: the site then loads no container at all. */
+  tag_manager: TagManagerContainer | null;
+}
+
+/**
+ * SEO → Settings → Analytics (uptms-ad SeoSettings::tagManager): the one
+ * Google Tag Manager container, and the paths it must never load on.
+ */
+export interface TagManagerContainer {
+  id: string;
+  exclude_paths: string[];
 }
 
 /** One URL of the XML sitemap (uptms-ad SitemapBuilder::entries). */
