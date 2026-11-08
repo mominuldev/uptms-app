@@ -36,7 +36,7 @@ export function SiteFooterCompact({ settings, menus }: { settings: SiteSettings;
           </ul>
         </nav>
       </div>
-      <FooterLegal settings={settings} stacked />
+      <FooterLegal settings={settings} links={menus.legal} stacked />
     </footer>
   );
 }

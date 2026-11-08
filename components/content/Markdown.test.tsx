@@ -20,6 +20,15 @@ describe("Markdown", () => {
     expect(container.textContent).toContain("<img");
   });
 
+  it("renders ## and ### lines as headings and keeps a # inside a paragraph as text", () => {
+    render(<Markdown text={"## How we protect it\n\n### Encryption\n\nIssue #4 is fixed.\n\n- one\n- two"} />);
+
+    expect(screen.getByRole("heading", { level: 2, name: "How we protect it" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 3, name: "Encryption" })).toBeTruthy();
+    expect(screen.getByText("Issue #4 is fixed.").tagName).toBe("P");
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
   it("parses nested emphasis inside links", () => {
     expect(parseInline("[**bold** link](https://example.com)")[0]).toMatchObject({ kind: "link", href: "https://example.com" });
   });

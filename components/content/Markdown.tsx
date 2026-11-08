@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 
 /**
  * The small Markdown dialect the admin offers (uptms-ad Field::markdown):
- * blank-line paragraphs, "- " bullet lists, **bold**, *italic* and
- * [label](href). It is parsed into React elements, never injected as HTML,
- * and links are limited to safe schemes.
+ * blank-line paragraphs, "- " bullet lists, "## " and "### " headings
+ * (policies and other long text), **bold**, *italic* and [label](href). It
+ * is parsed into React elements, never injected as HTML, and links are
+ * limited to safe schemes.
  */
 const SAFE_HREF = /^(\/(?!\/)|#|https:\/\/|tel:|mailto:)/;
 
@@ -61,16 +62,22 @@ export function Inline({ text, linkClassName = "font-bold text-royal underline-o
   return <>{renderInline(parseInline(text), linkClassName)}</>;
 }
 
+const HEADING = /^(##|###)\s+(.+)$/;
+
 export function Markdown({
   text,
   className = "flex flex-col gap-5",
   paragraphClassName = "",
   linkClassName,
+  headingClassName = "mt-4 font-serif text-[26px] leading-[1.2] tracking-[-0.015em] text-ink md:text-[30px]",
+  subheadingClassName = "mt-2 font-display text-[19px] leading-[1.3] font-bold text-ink",
 }: {
   text: string | null | undefined;
   className?: string;
   paragraphClassName?: string;
   linkClassName?: string;
+  headingClassName?: string;
+  subheadingClassName?: string;
 }) {
   if (!text || text.trim() === "") {
     return null;
@@ -82,6 +89,21 @@ export function Markdown({
     <div className={className}>
       {blocks.map((block, index) => {
         const lines = block.split("\n");
+        const heading = lines.length === 1 ? HEADING.exec(block.trim()) : null;
+
+        if (heading) {
+          const [, marks = "", title = ""] = heading;
+
+          return marks === "##" ? (
+            <h2 key={index} className={headingClassName}>
+              <Inline text={title} linkClassName={linkClassName} />
+            </h2>
+          ) : (
+            <h3 key={index} className={subheadingClassName}>
+              <Inline text={title} linkClassName={linkClassName} />
+            </h3>
+          );
+        }
 
         if (lines.every((line) => /^\s*[-•]\s+/.test(line))) {
           return (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { SiteMenus, SiteSettings } from "@/lib/site";
+import type { NavItem, SiteMenus, SiteSettings } from "@/lib/site";
 import { FooterLogo } from "./Logo";
 import { desktopGutter } from "./SiteHeader";
 
@@ -39,14 +39,22 @@ export function FooterVisit({ settings, compact = false }: { settings: SiteSetti
   );
 }
 
-export function FooterLegal({ settings, stacked = false }: { settings: SiteSettings; stacked?: boolean }) {
+/** The bottom bar: copyright, the legal menu (privacy, accessibility) and the crisis line. */
+export function FooterLegal({ settings, links = [], stacked = false }: { settings: SiteSettings; links?: NavItem[]; stacked?: boolean }) {
   return (
     <div
       className={`flex border-t border-white/20 text-caption text-white/72 ${
         stacked ? "flex-col gap-2 pt-5" : "flex-wrap justify-between gap-x-10 gap-y-2 pt-6"
       }`}
     >
-      <p>{settings.legal.copyright}</p>
+      <p className="flex flex-wrap gap-x-4 gap-y-1">
+        <span>{settings.legal.copyright}</span>
+        {links.map((item, index) => (
+          <Link key={`${item.href}-${index}`} href={item.href} className="rounded-sm text-white/72 underline-offset-4 hover:text-white hover:underline">
+            {item.label}
+          </Link>
+        ))}
+      </p>
       <p>{settings.legal.crisis}</p>
     </div>
   );
@@ -78,7 +86,7 @@ export function SiteFooter({ settings, menus }: { settings: SiteSettings; menus:
             </ul>
           </nav>
         </div>
-        <FooterLegal settings={settings} />
+        <FooterLegal settings={settings} links={menus.legal} />
       </div>
     </footer>
   );
